@@ -75,6 +75,8 @@ y_string = np.concatenate((l_chokkan_string, l_fukunagashi_string, l_kengai_stri
 
 y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l_sekijoju, l_shakan))
 
+# Imprime exemplos de estilos
+#
 # fig,ax=plt.subplots(2,3)
 # fig.set_size_inches(15,15)
 # for i in range(2):
@@ -103,11 +105,11 @@ datagen = ImageDataGenerator(
     vertical_flip=True)
 
 datagen.fit(X_train)
-
-# vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
-# googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
+#
+# # vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# # googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
 resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
-
+#
 base_learning_rate = 0.0001
 
 class Wrapper(tf.keras.Model):
@@ -123,83 +125,79 @@ class Wrapper(tf.keras.Model):
         x = self.average_pooling_layer(x)
         output = self.output_layer(x)
         return output
-
-
-# vgg16_base.trainable = False
-# vgg16 = Wrapper(vgg16_base)
-# vgg16.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-#               loss='binary_crossentropy',
-#               metrics=['accuracy'])
 #
-# googlenet_base.trainable = False
-# googlenet = Wrapper(googlenet_base)
-# googlenet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-#                   loss='binary_crossentropy',
-#                   metrics=['accuracy'])
-
-# resnet_base.trainable = False
-# resnet = Wrapper(resnet_base)
-# resnet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-#                loss='binary_crossentropy',
-#                metrics=['accuracy'])
-
-# loss1, accuracy1 = vgg16.evaluate(X_val, y_val, steps = 20)
-# loss2, accuracy2 = googlenet.evaluate(X_val, y_val, steps = 20)
-# loss3, accuracy3 = resnet.evaluate(X_val, y_val, steps = 20)
 #
-# print("--------VGG16---------")
+# # vgg16_base.trainable = False
+# # vgg16 = Wrapper(vgg16_base)
+# # vgg16.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
+# #               loss='binary_crossentropy',
+# #               metrics=['accuracy'])
+# #
+# # googlenet_base.trainable = False
+# # googlenet = Wrapper(googlenet_base)
+# # googlenet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
+# #                   loss='binary_crossentropy',
+# #                   metrics=['accuracy'])
+#
+resnet_base.trainable = False
+resnet = Wrapper(resnet_base)
+resnet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
+               loss='binary_crossentropy',
+               metrics=['accuracy'])
+#
+# # loss1, accuracy1 = vgg16.evaluate(X_val, y_val, steps = 20)
+# # loss2, accuracy2 = googlenet.evaluate(X_val, y_val, steps = 20)
+loss3, accuracy3 = resnet.evaluate(X_val, y_val, steps = 20)
+# #
+# # print("--------VGG16---------")
+# # print("Initial loss: {:.2f}".format(loss1))
+# # print("Initial accuracy: {:.2f}".format(accuracy1))
+# # print("---------------------------")
+# #
+# # print("--------GoogLeNet---------")
+# # print("Initial loss: {:.2f}".format(loss2))
+# # print("Initial accuracy: {:.2f}".format(accuracy2))
+# # print("---------------------------")
+# #
+print("--------ResNet---------")
+print("Initial loss: {:.2f}".format(loss3))
+print("Initial accuracy: {:.2f}".format(accuracy3))
+print("---------------------------")
+#
+#
+# # history = googlenet.fit(X_train, y_train,
+# #                     epochs=10,
+# #                     validation_data=X_val, y_val)
+#
+history = resnet.fit(X_train, y_train,
+                    epochs=200,
+                    validation_data = (X_val,y_val))
+
+resnet.save('Renet200Epochs.tf')
+print("Modelo salvo com sucesso")
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model Accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epochs')
+plt.legend(['train', 'test'])
+plt.show()
+
+# new_model = keras.models.load_model('Renet20Epochs.tf')
+# print("Modelo carregado!")
+
+#------------------------------------------------
+#- Verificação de precisão e inicio treinamento -
+#------------------------------------------------
+
+# loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
+#
+# print("--------Precisão Atual---------")
 # print("Initial loss: {:.2f}".format(loss1))
 # print("Initial accuracy: {:.2f}".format(accuracy1))
 # print("---------------------------")
 #
-# print("--------GoogLeNet---------")
-# print("Initial loss: {:.2f}".format(loss2))
-# print("Initial accuracy: {:.2f}".format(accuracy2))
-# print("---------------------------")
-#
-# print("--------ResNet---------")
-# print("Initial loss: {:.2f}".format(loss3))
-# print("Initial accuracy: {:.2f}".format(accuracy3))
-# print("---------------------------")
-
-
-# history = googlenet.fit(X_train, y_train,
-#                     epochs=10,
-#                     validation_data=X_val, y_val)
-
-# history = resnet.fit(X_train, y_train,
-#                     epochs=50,
-#                     validation_data = (X_val,y_val))
-#
-# resnet.save('Renet20Epochs.tf')
-# print("Modelo salvo com sucesso")
-#
-# plt.plot(history.history['accuracy'])
-# plt.plot(history.history['val_accuracy'])
-# plt.title('Model Accuracy')
-# plt.ylabel('Accuracy')
-# plt.xlabel('Epochs')
-# plt.legend(['train', 'test'])
-# plt.show()
-
-# resnet_base.trainable = False
-# resnet = Wrapper(resnet_base)
-# resnet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-#                loss='binary_crossentropy',
-#                metrics=['accuracy'])
-
-new_model = keras.models.load_model('Renet20Epochs.tf')
-history = new_model.fit(X_train, y_train,
-                    epochs=50,
-                    validation_data = (X_val,y_val))
-
-loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
-
-print("--------Precisão Atual---------")
-print("Initial loss: {:.2f}".format(loss1))
-print("Initial accuracy: {:.2f}".format(accuracy1))
-print("---------------------------")
-
 # history = new_model.fit(X_train, y_train,
 #                     epochs=50,
 #                     validation_data = (X_val,y_val))
@@ -215,34 +213,123 @@ print("---------------------------")
 # plt.legend(['train', 'test'])
 # plt.show()
 
-# Mostrando as imagens erradas
-pred = new_model.predict(X_val)
-pred = np.argmax(pred, axis = 1)
-pred = pd.DataFrame(pred).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'sekijoju',6:'shakan'})
 
-y_val_string = np.argmax(y_val, axis = 1)
-y_val_string = pd.DataFrame(y_val_string).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'sekijoju',6:'shakan'})
+# #-----------------------
+# #- Predição de imagens -
+# #-----------------------
+#
+# # Pegando os diretórios da base de dados.
+# chokkan_dir_pred = glob.glob(os.path.join('ChokkanPred/', '*'))
+# fukunagashi_dir_pred = glob.glob(os.path.join('FukunagashiPred/', '*'))
+# kengai_dir_pred = glob.glob(os.path.join('KengaiPred/', '*'))
+# literatti_dir_pred = glob.glob(os.path.join('LiterattiPred/', '*'))
+# moyogi_dir_pred = glob.glob(os.path.join('MoyogiPred/', '*'))
+# sekijoju_dir_pred = glob.glob(os.path.join('SekijojuPred/', '*'))
+# shakan_dir_pred = glob.glob(os.path.join('ShakanPred/', '*'))
+#
+# # Compilando todos os caminhos.
+# X_path = chokkan_dir_pred + fukunagashi_dir_pred + kengai_dir_pred + literatti_dir_pred + moyogi_dir_pred + sekijoju_dir_pred + shakan_dir_pred
+#
+# X = []
+#
+# # Tamanho da imagem escolhido foi de 224x224, a maioria das redes neurais prontas utilizam o 224x224
+# for f in X_path:
+#     try:
+#         X.append(np.array(cv.resize(cv.imread(f), (224,224), interpolation = cv.INTER_AREA)))
+#     except:
+#         print(f)
+#
+# X = np.array(X)
+#
+# # Normalização dividido pela quantidade de pixel no RGB.
+# X = X / 255
+#
+# # One-Hot-Encondig.
+# l_chokkan_pred = np.zeros(len(chokkan_dir_pred))
+# l_chokkan_string_pred = ['chokkanPred' for i in range(len(chokkan_dir_pred))]
+# l_fukunagashi_pred = np.ones(len(fukunagashi_dir_pred))
+# l_fukunagashi_string_pred = ['fukunagashiPred' for i in range(len(fukunagashi_dir_pred))]
+# l_kengai_pred = 2*np.ones(len(kengai_dir_pred))
+# l_kengai_string_pred = ['kengaiPred' for i in range(len(kengai_dir_pred))]
+# l_literatti_pred = 3*np.ones(len(literatti_dir_pred))
+# l_literatti_string_pred = ['literattiPred' for i in range(len(literatti_dir_pred))]
+# l_moyogi_pred = 4*np.ones(len(moyogi_dir_pred))
+# l_moyogi_string_pred = ['moyogiPred' for i in range(len(moyogi_dir_pred))]
+# l_sekijoju_pred = 5*np.ones(len(sekijoju_dir_pred))
+# l_sekijoju_string_pred = ['sekijojuPred' for i in range(len(sekijoju_dir_pred))]
+# l_shakan_pred = 6*np.ones(len(shakan_dir_pred))
+# l_shakan_string_pred = ['shakanPred' for i in range(len(shakan_dir_pred))]
+#
+# y_string = np.concatenate((l_chokkan_string_pred, l_fukunagashi_string_pred, l_kengai_string_pred, l_literatti_string_pred, l_moyogi_string_pred, l_sekijoju_string_pred, l_shakan_string_pred))
+#
+# y = np.concatenate((l_chokkan_pred, l_fukunagashi_pred, l_kengai_pred, l_literatti_pred, l_moyogi_pred, l_sekijoju_pred, l_shakan_pred))
+#
+# # Imprime exemplos de estilos
+#
+# # fig,ax=plt.subplots(2,3)
+# # fig.set_size_inches(15,15)
+# # for i in range(2):
+# #     for j in range (3):
+# #         r = random.randint(0,len(y_string))
+# #         ax[i,j].imshow(X[r][:,:,::-1])
+# #         ax[i,j].set_title('Flower: ' + y_string[r])
+# #
+# # plt.tight_layout()
+# # plt.show()
+#
+# # Finalização da categorização.
+#
+# y = to_categorical(y, 7)
+#
+# X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.9, random_state=42)
+#
+# X = []
+#
+# # Evita problemas de overfitting (Parece que modifica ligeiramente a imagem)
+# datagen = ImageDataGenerator(
+#     zoom_range = 0.1, # Aleatory zoom
+#     rotation_range= 15,
+#     width_shift_range=0.1,  # horizontal shift
+#     height_shift_range=0.1,  # vertical shift
+#     horizontal_flip=True,
+#     vertical_flip=True)
+#
+# datagen.fit(X_train)
+#
+# pred = new_model.predict(X_val)
+# pred = np.argmax(pred, axis = 1)
+# pred = pd.DataFrame(pred).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'sekijoju',6:'shakan'})
+#
+# y_val_string = np.argmax(y_val, axis = 1)
+# y_val_string = pd.DataFrame(y_val_string).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'sekijoju',6:'shakan'})
+#
+# mis_class = []
+# for i in range(len(y_val_string)):
+#     if(not y_val_string[0][i] == pred[0][i]):
+#         mis_class.append(i)
+#
+#     if(len(mis_class)==8):
+#         break
+#     # if(len(mis_class)==8):
+#     #     break
+#     # else:
+#     #     mis_class.append(i)
+#
+# count = 0
+# fig,ax = plt.subplots(3,2)
+# fig.set_size_inches(5,5)
+# for i in range (3):
+#     for j in range (2):
+#         ax[i,j].imshow(X_val[mis_class[count]][:,:,::-1])
+#         ax[i,j].set_title("Predicted style : "+str(pred[0][mis_class[count]])+"\n"+"Actual style : " + str(y_val_string[0][mis_class[count]]))
+#         plt.tight_layout()
+#         count+=1
+#
+# plt.show()
 
-mis_class = []
-for i in range(len(y_val_string)):
-    if(not y_val_string[0][i] == pred[0][i]):
-        mis_class.append(i)
-    if(len(mis_class)==8):
-        break
-
-count = 0
-fig,ax = plt.subplots(3,2)
-fig.set_size_inches(15,15)
-for i in range (3):
-    for j in range (2):
-        ax[i,j].imshow(X_val[mis_class[count]][:,:,::-1])
-        ax[i,j].set_title("Predicted style : "+str(pred[0][mis_class[count]])+"\n"+"Actual style : " + str(y_val_string[0][mis_class[count]]))
-        plt.tight_layout()
-        count+=1
-
-plt.show()
-
-# Implementação da CNN
+#---------------------------------
+#- Implementação da CNN - Manual -
+#---------------------------------
 
 # inp = Input((224,224,3))
 # conv1 = Conv2D(64, (5,5), padding='valid', activation= 'relu')(inp)
@@ -278,6 +365,10 @@ plt.show()
 # plt.legend(['train', 'test'])
 # plt.show()
 
+
+#----------------------------------
+#- Implementação TransferLearning -
+#----------------------------------
 
 # vgg = keras.applications.VGG16(input_shape=(224,224,3), include_top = False, weights= 'imagenet')
 #
