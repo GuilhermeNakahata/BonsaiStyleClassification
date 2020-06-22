@@ -1,3 +1,4 @@
+import pickle
 import warnings
 
 from keras.callbacks import ModelCheckpoint
@@ -107,9 +108,9 @@ datagen = ImageDataGenerator(
 datagen.fit(X_train)
 #
 # # vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
-# # googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
-resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
-#
+googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# # resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
+
 base_learning_rate = 0.0001
 
 class Wrapper(tf.keras.Model):
@@ -125,67 +126,82 @@ class Wrapper(tf.keras.Model):
         x = self.average_pooling_layer(x)
         output = self.output_layer(x)
         return output
-#
-#
+
 # # vgg16_base.trainable = False
 # # vgg16 = Wrapper(vgg16_base)
 # # vgg16.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
 # #               loss='binary_crossentropy',
 # #               metrics=['accuracy'])
-# #
-# # googlenet_base.trainable = False
-# # googlenet = Wrapper(googlenet_base)
-# # googlenet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-# #                   loss='binary_crossentropy',
-# #                   metrics=['accuracy'])
 #
-resnet_base.trainable = False
-resnet = Wrapper(resnet_base)
-resnet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-               loss='binary_crossentropy',
-               metrics=['accuracy'])
+googlenet_base.trainable = False
+googlenet = Wrapper(googlenet_base)
+googlenet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+#
+# # resnet_base.trainable = False
+# # resnet = Wrapper(resnet_base)
+# # resnet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
+# #                loss='binary_crossentropy',
+# #                metrics=['accuracy'])
 #
 # # loss1, accuracy1 = vgg16.evaluate(X_val, y_val, steps = 20)
-# # loss2, accuracy2 = googlenet.evaluate(X_val, y_val, steps = 20)
-loss3, accuracy3 = resnet.evaluate(X_val, y_val, steps = 20)
+# loss2, accuracy2 = googlenet.evaluate(X_val, y_val, steps = 20)
+# # loss3, accuracy3 = resnet.evaluate(X_val, y_val, steps = 20)
 # #
 # # print("--------VGG16---------")
 # # print("Initial loss: {:.2f}".format(loss1))
 # # print("Initial accuracy: {:.2f}".format(accuracy1))
 # # print("---------------------------")
 # #
-# # print("--------GoogLeNet---------")
-# # print("Initial loss: {:.2f}".format(loss2))
-# # print("Initial accuracy: {:.2f}".format(accuracy2))
-# # print("---------------------------")
+# print("--------GoogLeNet---------")
+# print("Initial loss: {:.2f}".format(loss2))
+# print("Initial accuracy: {:.2f}".format(accuracy2))
+# print("---------------------------")
 # #
-print("--------ResNet---------")
-print("Initial loss: {:.2f}".format(loss3))
-print("Initial accuracy: {:.2f}".format(accuracy3))
-print("---------------------------")
+# # print("--------ResNet---------")
+# # print("Initial loss: {:.2f}".format(loss3))
+# # print("Initial accuracy: {:.2f}".format(accuracy3))
+# # print("---------------------------")
 #
 #
-# # history = googlenet.fit(X_train, y_train,
-# #                     epochs=10,
-# #                     validation_data=X_val, y_val)
-#
-history = resnet.fit(X_train, y_train,
-                    epochs=200,
-                    validation_data = (X_val,y_val))
+history = googlenet.fit(X_train, y_train,
+                    epochs=50,
+                    validation_data=(X_val, y_val))
 
-resnet.save('Renet200Epochs.tf')
-print("Modelo salvo com sucesso")
-
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
-plt.title('Model Accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epochs')
-plt.legend(['train', 'test'])
-plt.show()
-
-# new_model = keras.models.load_model('Renet20Epochs.tf')
+# new_model = keras.models.load_model('googlenet50Epochs.tf')
 # print("Modelo carregado!")
+
+# history = new_model.fit(X_train, y_train,
+#                     epochs=1,
+#                     validation_data = (X_val,y_val))
+
+# OldHistory = pickle.load(open('trainHistory' , 'rb'))
+
+with open('trainHistory', 'wb') as file_pi:
+    pickle.dump(history.history, file_pi)
+print("Histórico de treino salvo com sucesso!")
+
+googlenet.save('googlenet50Epochs.tf')
+print("Modelo salvo com sucesso!")
+
+# NewHistory = pickle.load(open('trainHistory' , 'rb'))
+
+# OldHistory['accuracy'].extend(NewHistory['accuracy'])
+# OldHistory['val_accuracy'].extend(NewHistory['val_accuracy'])
+
+# with open('trainHistory', 'wb') as file_pi:
+#     pickle.dump(OldHistory, file_pi)
+
+#
+# plt.plot(OldHistory['accuracy'])
+# plt.plot(OldHistory['val_accuracy'])
+# plt.title('Model Accuracy')
+# plt.ylabel('Accuracy')
+# plt.xlabel('Epochs')
+# plt.legend(['train', 'test'])
+# plt.show()
+
 
 #------------------------------------------------
 #- Verificação de precisão e inicio treinamento -
@@ -214,10 +230,10 @@ plt.show()
 # plt.show()
 
 
-# #-----------------------
-# #- Predição de imagens -
-# #-----------------------
-#
+#-----------------------
+#- Predição de imagens -
+#-----------------------
+
 # # Pegando os diretórios da base de dados.
 # chokkan_dir_pred = glob.glob(os.path.join('ChokkanPred/', '*'))
 # fukunagashi_dir_pred = glob.glob(os.path.join('FukunagashiPred/', '*'))
