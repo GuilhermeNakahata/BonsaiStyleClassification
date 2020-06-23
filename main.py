@@ -36,11 +36,10 @@ fukunagashi_dir = glob.glob(os.path.join('Fukunagashi/', '*'))
 kengai_dir = glob.glob(os.path.join('Kengai/', '*'))
 literatti_dir = glob.glob(os.path.join('Literatti/', '*'))
 moyogi_dir = glob.glob(os.path.join('Moyogi/', '*'))
-sekijoju_dir = glob.glob(os.path.join('Sekijoju/', '*'))
 shakan_dir = glob.glob(os.path.join('Shakan/', '*'))
 
 # Compilando todos os caminhos.
-X_path = chokkan_dir + fukunagashi_dir + kengai_dir + literatti_dir + moyogi_dir + sekijoju_dir + shakan_dir
+X_path = chokkan_dir + fukunagashi_dir + kengai_dir + literatti_dir + moyogi_dir + shakan_dir
 
 X = []
 
@@ -67,14 +66,12 @@ l_literatti = 3*np.ones(len(literatti_dir))
 l_literatti_string = ['literatti' for i in range(len(literatti_dir))]
 l_moyogi = 4*np.ones(len(moyogi_dir))
 l_moyogi_string = ['moyogi' for i in range(len(moyogi_dir))]
-l_sekijoju = 5*np.ones(len(sekijoju_dir))
-l_sekijoju_string = ['sekijoju' for i in range(len(sekijoju_dir))]
-l_shakan = 6*np.ones(len(shakan_dir))
+l_shakan = 5*np.ones(len(shakan_dir))
 l_shakan_string = ['shakan' for i in range(len(shakan_dir))]
 
-y_string = np.concatenate((l_chokkan_string, l_fukunagashi_string, l_kengai_string, l_literatti_string, l_moyogi_string, l_sekijoju_string, l_shakan_string))
+y_string = np.concatenate((l_chokkan_string, l_fukunagashi_string, l_kengai_string, l_literatti_string, l_moyogi_string, l_shakan_string))
 
-y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l_sekijoju, l_shakan))
+y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l_shakan))
 
 # Imprime exemplos de estilos
 #
@@ -90,9 +87,9 @@ y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l
 # plt.show()
 
 # Finalização da categorização.
-y = to_categorical(y, 7)
+y = to_categorical(y, 6)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.2, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.3, random_state=42)
 
 X = []
 
@@ -119,7 +116,7 @@ class Wrapper(tf.keras.Model):
 
         self.base_model = base_model
         self.average_pooling_layer = tf.keras.layers.GlobalAveragePooling2D()
-        self.output_layer = tf.keras.layers.Dense(7)
+        self.output_layer = tf.keras.layers.Dense(6,activation='sigmoid')
 
     def call(self, inputs):
         x = self.base_model(inputs)
@@ -127,17 +124,35 @@ class Wrapper(tf.keras.Model):
         output = self.output_layer(x)
         return output
 
+
+x = googlenet_base.output
+x = Flatten()(x)
+x = Dense(512,activation='relu')(x)
+x = Dropout(0.5)(x)
+x = Dense(256,activation='relu')(x)
+x = Dropout(0.2)(x)
+out = Dense(6,activation='softmax')(x)
+
+tf_model=Model(inputs=googlenet_base.input,outputs=out)
+
+tf_model.summary()
+
+for layer in tf_model.layers[:20]:
+    layer.trainable=False
+
+tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+
 # # vgg16_base.trainable = False
 # # vgg16 = Wrapper(vgg16_base)
 # # vgg16.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
 # #               loss='binary_crossentropy',
 # #               metrics=['accuracy'])
 #
-googlenet_base.trainable = False
-googlenet = Wrapper(googlenet_base)
-googlenet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
+# googlenet_base.trainable = False
+# googlenet = Wrapper(googlenet_base)
+# googlenet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
+#                   loss='binary_crossentropy',
+#                   metrics=['accuracy'])
 #
 # # resnet_base.trainable = False
 # # resnet = Wrapper(resnet_base)
@@ -165,25 +180,28 @@ googlenet.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
 # # print("---------------------------")
 #
 #
-history = googlenet.fit(X_train, y_train,
-                    epochs=50,
-                    validation_data=(X_val, y_val))
+# history = googlenet.fit(X_train, y_train,
+#                     epochs=50,
+#                     validation_data=(X_val, y_val))
 
-# new_model = keras.models.load_model('googlenet50Epochs.tf')
+# new_model = keras.models.load_model('googlenet100Epochs.tf')
 # print("Modelo carregado!")
 
+history = tf_model.fit(X_train, y_train, batch_size = 1, epochs = 10, initial_epoch = 0,
+                      validation_data = (X_val, y_val))
+
 # history = new_model.fit(X_train, y_train,
-#                     epochs=1,
+#                     epochs=50,
 #                     validation_data = (X_val,y_val))
 
 # OldHistory = pickle.load(open('trainHistory' , 'rb'))
 
+tf_model.save('googlenet10epochs.tf')
+print("Modelo salvo com sucesso!")
+
 with open('trainHistory', 'wb') as file_pi:
     pickle.dump(history.history, file_pi)
 print("Histórico de treino salvo com sucesso!")
-
-googlenet.save('googlenet50Epochs.tf')
-print("Modelo salvo com sucesso!")
 
 # NewHistory = pickle.load(open('trainHistory' , 'rb'))
 
@@ -192,7 +210,6 @@ print("Modelo salvo com sucesso!")
 
 # with open('trainHistory', 'wb') as file_pi:
 #     pickle.dump(OldHistory, file_pi)
-
 #
 # plt.plot(OldHistory['accuracy'])
 # plt.plot(OldHistory['val_accuracy'])
