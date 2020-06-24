@@ -104,9 +104,9 @@ datagen = ImageDataGenerator(
 
 datagen.fit(X_train)
 #
-# # vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
-googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
-# # resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
+resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
 
 base_learning_rate = 0.0001
 
@@ -124,8 +124,8 @@ class Wrapper(tf.keras.Model):
         output = self.output_layer(x)
         return output
 
-
-x = googlenet_base.output
+#
+x = resnet_base.output
 x = Flatten()(x)
 x = Dense(512,activation='relu')(x)
 x = Dropout(0.5)(x)
@@ -133,7 +133,7 @@ x = Dense(256,activation='relu')(x)
 x = Dropout(0.2)(x)
 out = Dense(6,activation='softmax')(x)
 
-tf_model=Model(inputs=googlenet_base.input,outputs=out)
+tf_model=Model(inputs=resnet_base.input,outputs=out)
 
 tf_model.summary()
 
@@ -180,41 +180,51 @@ tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', 
 # # print("---------------------------")
 #
 #
-# history = googlenet.fit(X_train, y_train,
-#                     epochs=50,
+
+new_model = keras.models.load_model('VGG16.tf')
+print("Modelo carregado!")
+
+
+# history = new_model.fit(X_train, y_train,
+#                     epochs=5,
 #                     validation_data=(X_val, y_val))
-
-# new_model = keras.models.load_model('googlenet100Epochs.tf')
-# print("Modelo carregado!")
-
-history = tf_model.fit(X_train, y_train, batch_size = 1, epochs = 10, initial_epoch = 0,
-                      validation_data = (X_val, y_val))
+#
+# history = tf_model.fit(X_train, y_train, batch_size = 1, epochs = 10, initial_epoch = 0,
+#                       validation_data = (X_val, y_val))
 
 # history = new_model.fit(X_train, y_train,
 #                     epochs=50,
 #                     validation_data = (X_val,y_val))
 
 # OldHistory = pickle.load(open('trainHistory' , 'rb'))
-
-tf_model.save('googlenet10epochs.tf')
-print("Modelo salvo com sucesso!")
-
-with open('trainHistory', 'wb') as file_pi:
-    pickle.dump(history.history, file_pi)
-print("Histórico de treino salvo com sucesso!")
-
+#
+# tf_model.save('resnet10.tf')
+# print("Modelo salvo com sucesso!")
+#
+# with open('trainHistory', 'wb') as file_pi:
+#     pickle.dump(history.history, file_pi)
+# print("Histórico de treino salvo com sucesso!")
+#
 # NewHistory = pickle.load(open('trainHistory' , 'rb'))
-
+#
 # OldHistory['accuracy'].extend(NewHistory['accuracy'])
 # OldHistory['val_accuracy'].extend(NewHistory['val_accuracy'])
-
+# #
 # with open('trainHistory', 'wb') as file_pi:
 #     pickle.dump(OldHistory, file_pi)
-#
+# #
 # plt.plot(OldHistory['accuracy'])
 # plt.plot(OldHistory['val_accuracy'])
 # plt.title('Model Accuracy')
 # plt.ylabel('Accuracy')
+# plt.xlabel('Epochs')
+# plt.legend(['train', 'test'])
+# plt.show()
+#
+# plt.plot(OldHistory['loss'])
+# plt.plot(OldHistory['val_loss'])
+# plt.title('Model Loss')
+# plt.ylabel('Loss')
 # plt.xlabel('Epochs')
 # plt.legend(['train', 'test'])
 # plt.show()
@@ -224,12 +234,12 @@ print("Histórico de treino salvo com sucesso!")
 #- Verificação de precisão e inicio treinamento -
 #------------------------------------------------
 
-# loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
-#
-# print("--------Precisão Atual---------")
-# print("Initial loss: {:.2f}".format(loss1))
-# print("Initial accuracy: {:.2f}".format(accuracy1))
-# print("---------------------------")
+loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
+
+print("--------Precisão Atual---------")
+print("Initial loss: {:.2f}".format(loss1))
+print("Initial accuracy: {:.2f}".format(accuracy1))
+print("---------------------------")
 #
 # history = new_model.fit(X_train, y_train,
 #                     epochs=50,
@@ -251,17 +261,16 @@ print("Histórico de treino salvo com sucesso!")
 #- Predição de imagens -
 #-----------------------
 
-# # Pegando os diretórios da base de dados.
-# chokkan_dir_pred = glob.glob(os.path.join('ChokkanPred/', '*'))
-# fukunagashi_dir_pred = glob.glob(os.path.join('FukunagashiPred/', '*'))
-# kengai_dir_pred = glob.glob(os.path.join('KengaiPred/', '*'))
-# literatti_dir_pred = glob.glob(os.path.join('LiterattiPred/', '*'))
-# moyogi_dir_pred = glob.glob(os.path.join('MoyogiPred/', '*'))
-# sekijoju_dir_pred = glob.glob(os.path.join('SekijojuPred/', '*'))
-# shakan_dir_pred = glob.glob(os.path.join('ShakanPred/', '*'))
+# Pegando os diretórios da base de dados.
+# chokkan_dir = glob.glob(os.path.join('Chokkan/', '*'))
+# fukunagashi_dir = glob.glob(os.path.join('Fukunagashi/', '*'))
+# kengai_dir = glob.glob(os.path.join('Kengai/', '*'))
+# literatti_dir = glob.glob(os.path.join('Literatti/', '*'))
+# moyogi_dir = glob.glob(os.path.join('Moyogi/', '*'))
+# shakan_dir = glob.glob(os.path.join('Shakan/', '*'))
 #
 # # Compilando todos os caminhos.
-# X_path = chokkan_dir_pred + fukunagashi_dir_pred + kengai_dir_pred + literatti_dir_pred + moyogi_dir_pred + sekijoju_dir_pred + shakan_dir_pred
+# X_path = chokkan_dir + fukunagashi_dir + kengai_dir + literatti_dir + moyogi_dir + shakan_dir
 #
 # X = []
 #
@@ -278,27 +287,25 @@ print("Histórico de treino salvo com sucesso!")
 # X = X / 255
 #
 # # One-Hot-Encondig.
-# l_chokkan_pred = np.zeros(len(chokkan_dir_pred))
-# l_chokkan_string_pred = ['chokkanPred' for i in range(len(chokkan_dir_pred))]
-# l_fukunagashi_pred = np.ones(len(fukunagashi_dir_pred))
-# l_fukunagashi_string_pred = ['fukunagashiPred' for i in range(len(fukunagashi_dir_pred))]
-# l_kengai_pred = 2*np.ones(len(kengai_dir_pred))
-# l_kengai_string_pred = ['kengaiPred' for i in range(len(kengai_dir_pred))]
-# l_literatti_pred = 3*np.ones(len(literatti_dir_pred))
-# l_literatti_string_pred = ['literattiPred' for i in range(len(literatti_dir_pred))]
-# l_moyogi_pred = 4*np.ones(len(moyogi_dir_pred))
-# l_moyogi_string_pred = ['moyogiPred' for i in range(len(moyogi_dir_pred))]
-# l_sekijoju_pred = 5*np.ones(len(sekijoju_dir_pred))
-# l_sekijoju_string_pred = ['sekijojuPred' for i in range(len(sekijoju_dir_pred))]
-# l_shakan_pred = 6*np.ones(len(shakan_dir_pred))
-# l_shakan_string_pred = ['shakanPred' for i in range(len(shakan_dir_pred))]
+# l_chokkan = np.zeros(len(chokkan_dir))
+# l_chokkan_string = ['chokkan' for i in range(len(chokkan_dir))]
+# l_fukunagashi = np.ones(len(fukunagashi_dir))
+# l_fukunagashi_string = ['fukunagashi' for i in range(len(fukunagashi_dir))]
+# l_kengai = 2*np.ones(len(kengai_dir))
+# l_kengai_string = ['kengai' for i in range(len(kengai_dir))]
+# l_literatti = 3*np.ones(len(literatti_dir))
+# l_literatti_string = ['literatti' for i in range(len(literatti_dir))]
+# l_moyogi = 4*np.ones(len(moyogi_dir))
+# l_moyogi_string = ['moyogi' for i in range(len(moyogi_dir))]
+# l_shakan = 5*np.ones(len(shakan_dir))
+# l_shakan_string = ['shakan' for i in range(len(shakan_dir))]
 #
-# y_string = np.concatenate((l_chokkan_string_pred, l_fukunagashi_string_pred, l_kengai_string_pred, l_literatti_string_pred, l_moyogi_string_pred, l_sekijoju_string_pred, l_shakan_string_pred))
+# y_string = np.concatenate((l_chokkan_string, l_fukunagashi_string, l_kengai_string, l_literatti_string, l_moyogi_string, l_shakan_string))
 #
-# y = np.concatenate((l_chokkan_pred, l_fukunagashi_pred, l_kengai_pred, l_literatti_pred, l_moyogi_pred, l_sekijoju_pred, l_shakan_pred))
+# y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l_shakan))
 #
 # # Imprime exemplos de estilos
-#
+# #
 # # fig,ax=plt.subplots(2,3)
 # # fig.set_size_inches(15,15)
 # # for i in range(2):
@@ -311,10 +318,9 @@ print("Histórico de treino salvo com sucesso!")
 # # plt.show()
 #
 # # Finalização da categorização.
+# y = to_categorical(y, 6)
 #
-# y = to_categorical(y, 7)
-#
-# X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.9, random_state=42)
+# X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.3, random_state=42)
 #
 # X = []
 #
@@ -331,14 +337,14 @@ print("Histórico de treino salvo com sucesso!")
 #
 # pred = new_model.predict(X_val)
 # pred = np.argmax(pred, axis = 1)
-# pred = pd.DataFrame(pred).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'sekijoju',6:'shakan'})
+# pred = pd.DataFrame(pred).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'shakan'})
 #
 # y_val_string = np.argmax(y_val, axis = 1)
-# y_val_string = pd.DataFrame(y_val_string).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'sekijoju',6:'shakan'})
+# y_val_string = pd.DataFrame(y_val_string).replace({0:'chokkan',1:'fukunagashi',2:'kengai',3:'literatti',4:'moyogi',5:'shakan'})
 #
 # mis_class = []
 # for i in range(len(y_val_string)):
-#     if(not y_val_string[0][i] == pred[0][i]):
+#     if(y_val_string[0][i] == pred[0][i]):
 #         mis_class.append(i)
 #
 #     if(len(mis_class)==8):
@@ -347,6 +353,14 @@ print("Histórico de treino salvo com sucesso!")
 #     #     break
 #     # else:
 #     #     mis_class.append(i)
+#
+# mis_class1 = []
+# for i in range(len(y_val_string)):
+#     if(y_val_string[0][i] == pred[0][i]):
+#         mis_class1.append(i)
+#
+#
+# print(len(mis_class1))
 #
 # count = 0
 # fig,ax = plt.subplots(3,2)
