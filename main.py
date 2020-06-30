@@ -1,7 +1,14 @@
 import pickle
 import warnings
 
+import keras as keras
+import numpy
 from keras.callbacks import ModelCheckpoint
+from keras.legacy import layers
+from matplotlib import pyplot
+from nets.nn import Sequential
+from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
+from tensorflow.python.keras.applications.resnet import ResNet50
 
 warnings.filterwarnings('always')
 warnings.filterwarnings('ignore')
@@ -22,6 +29,11 @@ from keras.utils import to_categorical
 from keras.layers import Dropout, Flatten, Input, Dense
 from keras.layers import Conv2D, MaxPooling2D, BatchNormalization
 from keras.models import model_from_json
+from keras.models import Sequential
+from keras import optimizers, models
+
+from keras import layers
+from keras import models
 
 import random
 import tensorflow as tf
@@ -93,7 +105,7 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.3, random_
 
 X = []
 
-# Evita problemas de overfitting (Parece que modifica ligeiramente a imagem)
+# Evita problemas de overfitting (Aumenta o data_set)
 datagen = ImageDataGenerator(
     zoom_range = 0.1, # Aleatory zoom
     rotation_range= 15,
@@ -103,44 +115,141 @@ datagen = ImageDataGenerator(
     vertical_flip=True)
 
 datagen.fit(X_train)
-#
-# vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
-# googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
-resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
 
+
+
+# print("the number of training examples = %i" % X_train.shape[0])
+# print("the number of classes = %i" % len(numpy.unique(y_train)))
+# print("Dimention of images = {:d} x {:d}  ".format(X_train[1].shape[0],X_train[1].shape[1])  )
+#
+# unique, count= numpy.unique(y_train, return_counts=True)
+# print("The number of occuranc of each class in the dataset = %s " % dict (zip(unique, count) ), "\n" )
+#
+# images_and_labels = list(zip(X_train,  y_train))
+# for index, (image, label) in enumerate(images_and_labels[:12]):
+#     plt.subplot(5, 4, index + 1)
+#     plt.axis('off')
+#     plt.imshow(image.squeeze(), cmap=plt.cm.gray_r, interpolation='nearest')
+#     plt.title('label: %i' % label)
+#
+# plt.show()
+
+#
+#
+vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# # googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# # resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# resnet_base = InceptionResNetV2(include_top=False, weights='imagenet', input_shape=(224,224,3))
+#
 base_learning_rate = 0.0001
-
-class Wrapper(tf.keras.Model):
-    def __init__(self, base_model):
-        super(Wrapper, self).__init__()
-
-        self.base_model = base_model
-        self.average_pooling_layer = tf.keras.layers.GlobalAveragePooling2D()
-        self.output_layer = tf.keras.layers.Dense(6,activation='sigmoid')
-
-    def call(self, inputs):
-        x = self.base_model(inputs)
-        x = self.average_pooling_layer(x)
-        output = self.output_layer(x)
-        return output
-
 #
-x = resnet_base.output
+# class Wrapper(tf.keras.Model):
+#     def __init__(self, base_model):
+#         super(Wrapper, self).__init__()
+#
+#         self.base_model = base_model
+#         self.average_pooling_layer = tf.keras.layers.GlobalAveragePooling2D()
+#         self.output_layer = tf.keras.layers.Dense(6,activation='sigmoid')
+#
+#     def call(self, inputs):
+#         x = self.base_model(inputs)
+#         x = self.average_pooling_layer(x)
+#         output = self.output_layer(x)
+#         return output
+#
+#
+# vgg16_base.summary()
+#
+#
+# model = models.Sequential()
+# model.add(resnet_base)
+# model.add(layers.Flatten())
+# model.add(layers.Dense(512, activation='relu'))
+# model.add(Dropout(0.5))
+# model.add(layers.Dense(256, activation='relu'))
+# model.add(Dropout(0.5))
+# model.add(layers.Dense(128, activation='relu'))
+# model.add(Dropout(0.3))
+# model.add(layers.Dense(6, activation='softmax'))
+#
+# model.summary()
+#
+# print('Number of trainable weights before freezing the conv base:', len(model.trainable_weights))
+# resnet_base.trainable = False
+# print('Number of trainable weights after freezing the conv base:', len(model.trainable_weights))
+# #
+# # val_datagen = ImageDataGenerator(rescale=1./255)
+# #
+# batch_size = 32
+# #
+# train_generator = datagen.flow(X_train, y_train,batch_size=batch_size)
+# val_generator = datagen.flow(X_val, y_val, batch_size=batch_size)
+#
+# model.compile(loss='categorical_crossentropy', optimizer=optimizers.RMSprop(lr=2e-5), metrics=['accuracy'])
+#
+# history = model.fit(X_train, y_train,
+#                     epochs=50,
+#                     validation_data=(X_val, y_val))
+
+# history = model.fit_generator(train_generator,
+#                               steps_per_epoch=len(X_train) // batch_size,
+#                               epochs=20,
+#                               validation_data=val_generator,
+#                               validation_steps=len(X_val) // batch_size)
+#
+x = vgg16_base.output
 x = Flatten()(x)
-x = Dense(512,activation='relu')(x)
-x = Dropout(0.5)(x)
-x = Dense(256,activation='relu')(x)
+x = Dense(32,activation='relu')(x)
+x = Dropout(0.3)(x)
+x = Dense(16,activation='relu')(x)
 x = Dropout(0.2)(x)
 out = Dense(6,activation='softmax')(x)
+#
+#
+tf_model=Model(inputs=vgg16_base.input,outputs=out)
 
-tf_model=Model(inputs=resnet_base.input,outputs=out)
-
-tf_model.summary()
+# tf_model.summary()
 
 for layer in tf_model.layers[:20]:
     layer.trainable=False
 
 tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+
+history = tf_model.fit(X_train,y_train,validation_data=(X_val, y_val),epochs=50)
+
+# history = tf_model.fit(X_train, y_train, batch_size = 1, epochs = 20, initial_epoch = 0,
+#                       validation_data = (X_val, y_val))
+
+# output = resnet_base.layers[-1].output
+# output = keras.layers.Flatten()(output)
+# restnet = Model(inputs=resnet_base.input, outputs=output)
+
+# for layer in restnet.layers:
+#     layer.trainable = False
+# #
+# # restnet.summary()
+#
+# model = Sequential()
+# model.add(restnet)
+# model.add(Dense(512, activation='relu'))
+# model.add(Dropout(0.3))
+# model.add(Dense(256, activation='relu'))
+# model.add(Dropout(0.3))
+# model.add(Dense(6, activation='softmax'))
+# model.compile(loss='categorical_crossentropy', optimizer=Nadam(0.0001), metrics=['accuracy'])
+# model.summary()
+#
+# tf_model.compile(loss='categorical_crossentropy',
+#               optimizer=Nadam(0.0001),
+#               metrics=['accuracy'])
+#
+# history = tf_model.fit(X_train,y_train,validation_data=(X_val, y_val),epochs=5)
+#
+# history = model.fit(X_train, y_train,
+#                     epochs=20,
+#                     validation_data=(X_val, y_val))
+
+# tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
 
 # # vgg16_base.trainable = False
 # # vgg16 = Wrapper(vgg16_base)
@@ -160,15 +269,107 @@ tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', 
 # #                loss='binary_crossentropy',
 # #                metrics=['accuracy'])
 #
-# # loss1, accuracy1 = vgg16.evaluate(X_val, y_val, steps = 20)
+# new_model = keras.models.load_model('VGG16.tf')
+# print("Modelo carregado!")
+#
+# new_model.summary()
+#
+# for layer in new_model.layers[:20]:
+#     layer.trainable=False
+#
+# new_model.summary()
+
+#
+# loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
 # loss2, accuracy2 = googlenet.evaluate(X_val, y_val, steps = 20)
 # # loss3, accuracy3 = resnet.evaluate(X_val, y_val, steps = 20)
-# #
-# # print("--------VGG16---------")
-# # print("Initial loss: {:.2f}".format(loss1))
-# # print("Initial accuracy: {:.2f}".format(accuracy1))
-# # print("---------------------------")
-# #
+#
+# print("--------VGG16---------")
+# print("Initial loss: {:.2f}".format(loss1))
+# print("Initial accuracy: {:.2f}".format(accuracy1))
+# print("---------------------------")
+#
+#------------------------------
+#- Visualização Features Maps -
+#------------------------------
+#
+# for layer in new_model.layers:
+#     # check for convolutional layer
+#     if 'conv' not in layer.name:
+#         continue
+#     # get filter weights
+#     filters, biases = layer.get_weights()
+#     print(layer.name, filters.shape)
+#
+# filters, biases = new_model.layers[5].get_weights()
+#
+# f_min, f_max = filters.min(), filters.max()
+# filters = (filters - f_min) / (f_max - f_min)
+#
+# # plot first few filters
+# n_filters, ix = 6, 1
+# for i in range(n_filters):
+#     # get the filter
+#     f = filters[:, :, :, i]
+#     # plot each channel separately
+#     for j in range(3):
+#         # specify subplot and turn of axis
+#         ax = pyplot.subplot(n_filters, 3, ix)
+#         ax.set_xticks([])
+#         ax.set_yticks([])
+#         # plot filter channel in grayscale
+#         pyplot.imshow(f[:, :, j])
+#         ix += 1
+# # show the figure
+# pyplot.show()
+#
+# for i in range(len(new_model.layers)):
+#     layer = new_model.layers[i]
+#     # check for convolutional layer
+#     if 'conv' not in layer.name:
+#         continue
+#     # summarize output shape
+#     print(i, layer.name, layer.output.shape)
+#
+# from keras.applications.vgg16 import VGG16
+# from keras.applications.vgg16 import preprocess_input
+# from keras.preprocessing.image import load_img
+# from keras.preprocessing.image import img_to_array
+# from keras.models import Model
+# from matplotlib import pyplot
+# from numpy import expand_dims
+#
+# ixs = [2, 5, 9, 13, 17]
+# outputs = [new_model.layers[i].output for i in ixs]
+# model = Model(inputs=new_model.inputs, outputs=outputs)
+# # load the image with the required shape
+# img = load_img('exampleImg.jpg', target_size=(224, 224))
+# # convert the image to an array
+# img = img_to_array(img)
+# # expand dimensions so that it represents a single 'sample'
+# img = expand_dims(img, axis=0)
+# # prepare the image (e.g. scale pixel values for the vgg)
+# img = preprocess_input(img)
+# # get feature map for first hidden layer
+# feature_maps = model.predict(img)
+# # plot the output from each block
+# square = 5
+# for fmap in feature_maps:
+#     # plot all 64 maps in an 8x8 squares
+#     ix = 1
+#     for _ in range(square):
+#         for _ in range(square):
+#             # specify subplot and turn of axis
+#             ax = pyplot.subplot(square, square, ix)
+#             ax.set_xticks([])
+#             ax.set_yticks([])
+#             # plot filter channel in grayscale
+#             pyplot.imshow(fmap[0, :, :, ix-1])
+#             ix += 1
+#     # show the figure
+#     pyplot.show()
+#
+#
 # print("--------GoogLeNet---------")
 # print("Initial loss: {:.2f}".format(loss2))
 # print("Initial accuracy: {:.2f}".format(accuracy2))
@@ -180,66 +381,70 @@ tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', 
 # # print("---------------------------")
 #
 #
+#
+# new_model = keras.models.load_model('resnet50.tf')
+# print("Modelo carregado!")
 
-new_model = keras.models.load_model('VGG16.tf')
-print("Modelo carregado!")
 
-
-# history = new_model.fit(X_train, y_train,
-#                     epochs=5,
+# history = model.fit(X_train, y_train,
+#                     epochs=50,
 #                     validation_data=(X_val, y_val))
 #
 # history = tf_model.fit(X_train, y_train, batch_size = 1, epochs = 10, initial_epoch = 0,
 #                       validation_data = (X_val, y_val))
 
+#
 # history = new_model.fit(X_train, y_train,
-#                     epochs=50,
+#                     epochs=20,
 #                     validation_data = (X_val,y_val))
-
+# #
 # OldHistory = pickle.load(open('trainHistory' , 'rb'))
 #
-# tf_model.save('resnet10.tf')
-# print("Modelo salvo com sucesso!")
-#
-# with open('trainHistory', 'wb') as file_pi:
-#     pickle.dump(history.history, file_pi)
-# print("Histórico de treino salvo com sucesso!")
-#
+tf_model.save('VGG16Novo.tf')
+print("Modelo salvo com sucesso!")
+
+with open('trainHistory', 'wb') as file_pi:
+    pickle.dump(history.history, file_pi)
+print("Histórico de treino salvo com sucesso!")
+# #
 # NewHistory = pickle.load(open('trainHistory' , 'rb'))
-#
+# #
 # OldHistory['accuracy'].extend(NewHistory['accuracy'])
 # OldHistory['val_accuracy'].extend(NewHistory['val_accuracy'])
-# #
+#
 # with open('trainHistory', 'wb') as file_pi:
 #     pickle.dump(OldHistory, file_pi)
-# #
-# plt.plot(OldHistory['accuracy'])
-# plt.plot(OldHistory['val_accuracy'])
-# plt.title('Model Accuracy')
-# plt.ylabel('Accuracy')
-# plt.xlabel('Epochs')
-# plt.legend(['train', 'test'])
-# plt.show()
 #
-# plt.plot(OldHistory['loss'])
-# plt.plot(OldHistory['val_loss'])
-# plt.title('Model Loss')
-# plt.ylabel('Loss')
-# plt.xlabel('Epochs')
-# plt.legend(['train', 'test'])
-# plt.show()
+#
+OldHistory = pickle.load(open('trainHistory' , 'rb'))
+
+plt.plot(OldHistory['accuracy'])
+plt.plot(OldHistory['val_accuracy'])
+plt.title('Model Accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epochs')
+plt.legend(['train', 'test'])
+plt.show()
+
+plt.plot(OldHistory['loss'])
+plt.plot(OldHistory['val_loss'])
+plt.title('Model Loss')
+plt.ylabel('Loss')
+plt.xlabel('Epochs')
+plt.legend(['train', 'test'])
+plt.show()
 
 
 #------------------------------------------------
 #- Verificação de precisão e inicio treinamento -
 #------------------------------------------------
-
-loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
-
-print("--------Precisão Atual---------")
-print("Initial loss: {:.2f}".format(loss1))
-print("Initial accuracy: {:.2f}".format(accuracy1))
-print("---------------------------")
+#
+# loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
+#
+# print("--------Precisão Atual---------")
+# print("Initial loss: {:.2f}".format(loss1))
+# print("Initial accuracy: {:.2f}".format(accuracy1))
+# print("---------------------------")
 #
 # history = new_model.fit(X_train, y_train,
 #                     epochs=50,
@@ -344,7 +549,7 @@ print("---------------------------")
 #
 # mis_class = []
 # for i in range(len(y_val_string)):
-#     if(y_val_string[0][i] == pred[0][i]):
+#     if(not y_val_string[0][i] == pred[0][i]):
 #         mis_class.append(i)
 #
 #     if(len(mis_class)==8):

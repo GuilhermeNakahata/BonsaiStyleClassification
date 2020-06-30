@@ -5,8 +5,7 @@ Literatti
 Moyogi
 Shakan
 trainHistory
-googlenet10epochs.tf
-googlenet50Epochs.tf
-googlenet100Epochs.tf
 .idea
 CNN-TransferLearning.iml
+exampleImg.jpg
+VGG16.tf
