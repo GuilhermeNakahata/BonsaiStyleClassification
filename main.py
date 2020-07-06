@@ -3,11 +3,12 @@ import warnings
 
 import keras as keras
 import numpy
+import numpy as numpy
 from keras.callbacks import ModelCheckpoint
 from keras.legacy import layers
 from matplotlib import pyplot
 from nets.nn import Sequential
-from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
+from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
 from tensorflow.python.keras.applications.resnet import ResNet50
 
 warnings.filterwarnings('always')
@@ -19,7 +20,7 @@ import matplotlib.pyplot as plt
 
 import seaborn as sns
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 
 import keras
 from keras.preprocessing.image import ImageDataGenerator
@@ -27,7 +28,7 @@ from keras.models import Model
 from keras.optimizers import Nadam, Adam
 from keras.utils import to_categorical
 from keras.layers import Dropout, Flatten, Input, Dense
-from keras.layers import Conv2D, MaxPooling2D, BatchNormalization
+from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, GlobalAveragePooling2D
 from keras.models import model_from_json
 from keras.models import Sequential
 from keras import optimizers, models
@@ -40,7 +41,6 @@ import tensorflow as tf
 import cv2 as cv
 import os
 import glob
-
 
 # Pegando os diretórios da base de dados.
 chokkan_dir = glob.glob(os.path.join('Chokkan/', '*'))
@@ -58,7 +58,7 @@ X = []
 # Tamanho da imagem escolhido foi de 224x224, a maioria das redes neurais prontas utilizam o 224x224
 for f in X_path:
     try:
-        X.append(np.array(cv.resize(cv.imread(f), (224,224), interpolation = cv.INTER_AREA)))
+        X.append(np.array(cv.resize(cv.imread(f), (224, 224), interpolation=cv.INTER_AREA)))
     except:
         print(f)
 
@@ -72,16 +72,17 @@ l_chokkan = np.zeros(len(chokkan_dir))
 l_chokkan_string = ['chokkan' for i in range(len(chokkan_dir))]
 l_fukunagashi = np.ones(len(fukunagashi_dir))
 l_fukunagashi_string = ['fukunagashi' for i in range(len(fukunagashi_dir))]
-l_kengai = 2*np.ones(len(kengai_dir))
+l_kengai = 2 * np.ones(len(kengai_dir))
 l_kengai_string = ['kengai' for i in range(len(kengai_dir))]
-l_literatti = 3*np.ones(len(literatti_dir))
+l_literatti = 3 * np.ones(len(literatti_dir))
 l_literatti_string = ['literatti' for i in range(len(literatti_dir))]
-l_moyogi = 4*np.ones(len(moyogi_dir))
+l_moyogi = 4 * np.ones(len(moyogi_dir))
 l_moyogi_string = ['moyogi' for i in range(len(moyogi_dir))]
-l_shakan = 5*np.ones(len(shakan_dir))
+l_shakan = 5 * np.ones(len(shakan_dir))
 l_shakan_string = ['shakan' for i in range(len(shakan_dir))]
 
-y_string = np.concatenate((l_chokkan_string, l_fukunagashi_string, l_kengai_string, l_literatti_string, l_moyogi_string, l_shakan_string))
+y_string = np.concatenate(
+    (l_chokkan_string, l_fukunagashi_string, l_kengai_string, l_literatti_string, l_moyogi_string, l_shakan_string))
 
 y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l_shakan))
 
@@ -101,14 +102,19 @@ y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l
 # Finalização da categorização.
 y = to_categorical(y, 6)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.3, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.1, random_state=42)
+
+print(len(X_train))
+print(len(y_train))
+print(len(X_val))
+print(len(y_val))
 
 X = []
 
 # Evita problemas de overfitting (Aumenta o data_set)
 datagen = ImageDataGenerator(
-    zoom_range = 0.1, # Aleatory zoom
-    rotation_range= 15,
+    zoom_range=0.1,  # Aleatory zoom
+    rotation_range=15,
     width_shift_range=0.1,  # horizontal shift
     height_shift_range=0.1,  # vertical shift
     horizontal_flip=True,
@@ -116,14 +122,49 @@ datagen = ImageDataGenerator(
 
 datagen.fit(X_train)
 
+listStyles = []
 
+for i in range(len(y_string)):
+    achado = False
+    for j in range(len(listStyles)):
+        if y_string[i] == listStyles[j]:
+            achado = True
+            break
+    if achado == False:
+        listStyles.append(y_string[i])
 
-# print("the number of training examples = %i" % X_train.shape[0])
-# print("the number of classes = %i" % len(numpy.unique(y_train)))
-# print("Dimention of images = {:d} x {:d}  ".format(X_train[1].shape[0],X_train[1].shape[1])  )
+listQuantity = []
+
+for i in range(len(listStyles)):
+    listQuantity.append(0)
+    for j in range(len(y_string)):
+        if y_string[j] == listStyles[i]:
+            listQuantity[i] += 1
+
+bonsaiDataSet = {'Style': listStyles,
+                 'Quantity': listQuantity
+                 }
+
+df = pd.DataFrame(bonsaiDataSet, columns=['Style', 'Quantity'])
+
+print(df)
 #
-# unique, count= numpy.unique(y_train, return_counts=True)
-# print("The number of occuranc of each class in the dataset = %s " % dict (zip(unique, count) ), "\n" )
+# sns.barplot(x="Style", y="Quantity", data=df)
+# plt.show()
+
+# plt.figure(figsize = (12,6))
+# sns.barplot(df.Style, df.Quantity, alpha = 0.5)
+# plt.xticks(rotation = 'vertical')
+# plt.xlabel('Styles', fontsize =12)
+# plt.ylabel('Quantitys', fontsize = 12)
+# plt.show()
+
+print("the number of training examples = %i" % X_train.shape[0])
+print("the number of classes = %i" % len(numpy.unique(y_string)))
+print("Dimention of images = {:d} x {:d}  ".format(X_train[1].shape[0], X_train[1].shape[1]))
+
+unique, count = numpy.unique(y_string, return_counts=True)
+print("The number of occuranc of each class in the dataset = %s " % dict(zip(unique, count)), "\n")
 #
 # images_and_labels = list(zip(X_train,  y_train))
 # for index, (image, label) in enumerate(images_and_labels[:12]):
@@ -136,11 +177,12 @@ datagen.fit(X_train)
 
 #
 #
-vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
-# # googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
-# # resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
 # resnet_base = InceptionResNetV2(include_top=False, weights='imagenet', input_shape=(224,224,3))
-#
+# resnet_base = ResNet50(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
+
 base_learning_rate = 0.0001
 #
 # class Wrapper(tf.keras.Model):
@@ -160,63 +202,119 @@ base_learning_rate = 0.0001
 #
 # vgg16_base.summary()
 #
-#
+
+acc_per_fold = []
+loss_per_fold = []
+
+# train_generator = datagen.flow(X_train, y_train, batch_size=32)
+# val_generator = datagen.flow(X_val, y_val, batch_size=32)
+
+train_generator = np.concatenate((X_train, X_val), axis=0)
+val_generator = np.concatenate((y_train, y_val), axis=0)
+
+# K-fold Cross Validation model evaluation
+kfold = KFold(n_splits=10, shuffle=True)
+fold_no = 1
+for train, test in kfold.split(train_generator, val_generator):
+    # Define the model architecture
+    googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
+    x = googlenet_base.output
+    x = GlobalAveragePooling2D(name='avg_pool')(x)
+    x = Dropout(0.4)(x)
+    predictions = Dense(6, activation='softmax')(x)
+    model = Model(inputs=googlenet_base.input, outputs=predictions)
+
+    # Compile the model
+    for layer in googlenet_base.layers:
+        layer.trainable = False
+
+    model.compile(optimizer='rmsprop',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    # Generate a print
+    print('------------------------------------------------------------------------')
+    print(f'Training for fold {fold_no} ...')
+
+    # Fit data to model
+    history = model.fit(train_generator[train],val_generator[train],
+                        epochs=10)
+
+    # Generate generalization metrics
+    scores = model.evaluate(train_generator[test], val_generator[test], verbose=0)
+    print(
+        f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1] * 100}%')
+    acc_per_fold.append(scores[1] * 100)
+    loss_per_fold.append(scores[0])
+
+    # Increase fold number
+    fold_no = fold_no + 1
+
+# == Provide average scores ==
+print('------------------------------------------------------------------------')
+print('Score per fold')
+for i in range(0, len(acc_per_fold)):
+    print('------------------------------------------------------------------------')
+    print(f'> Fold {i + 1} - Loss: {loss_per_fold[i]} - Accuracy: {acc_per_fold[i]}%')
+print('------------------------------------------------------------------------')
+print('Average scores for all folds:')
+print(f'> Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)})')
+print(f'> Loss: {np.mean(loss_per_fold)}')
+print('------------------------------------------------------------------------')
+
 # model = models.Sequential()
-# model.add(resnet_base)
+# model.add(googlenet_base)
 # model.add(layers.Flatten())
-# model.add(layers.Dense(512, activation='relu'))
-# model.add(Dropout(0.5))
-# model.add(layers.Dense(256, activation='relu'))
-# model.add(Dropout(0.5))
-# model.add(layers.Dense(128, activation='relu'))
+# model.add(layers.Dense(2048, activation='relu'))
 # model.add(Dropout(0.3))
 # model.add(layers.Dense(6, activation='softmax'))
 #
 # model.summary()
 #
 # print('Number of trainable weights before freezing the conv base:', len(model.trainable_weights))
-# resnet_base.trainable = False
+# googlenet_base.trainable = False
 # print('Number of trainable weights after freezing the conv base:', len(model.trainable_weights))
 # #
-# # val_datagen = ImageDataGenerator(rescale=1./255)
+# val_datagen = ImageDataGenerator(rescale=1. / 255)
 # #
 # batch_size = 32
 # #
-# train_generator = datagen.flow(X_train, y_train,batch_size=batch_size)
+# train_generator = datagen.flow(X_train, y_train, batch_size=batch_size)
 # val_generator = datagen.flow(X_val, y_val, batch_size=batch_size)
 #
-# model.compile(loss='categorical_crossentropy', optimizer=optimizers.RMSprop(lr=2e-5), metrics=['accuracy'])
-#
+# model.compile(loss='categorical_crossentropy', optimizer=optimizers.SGD(lr=1e-4,
+#                                                                       momentum=0.9), metrics=['accuracy'])
+
 # history = model.fit(X_train, y_train,
-#                     epochs=50,
+#                     epochs=20,
 #                     validation_data=(X_val, y_val))
 
 # history = model.fit_generator(train_generator,
 #                               steps_per_epoch=len(X_train) // batch_size,
-#                               epochs=20,
+#                               epochs=100,
 #                               validation_data=val_generator,
 #                               validation_steps=len(X_val) // batch_size)
 #
-x = vgg16_base.output
-x = Flatten()(x)
-x = Dense(32,activation='relu')(x)
-x = Dropout(0.3)(x)
-x = Dense(16,activation='relu')(x)
-x = Dropout(0.2)(x)
-out = Dense(6,activation='softmax')(x)
+# x = vgg16_base.output
+# x = Flatten()(x)
+# x = Dense(512,activation='relu')(x)
+# x = Dropout(0.5)(x)
+# x = Dense(256,activation='relu')(x)
+# x = Dropout(0.3)(x)
+# out = Dense(6,activation='softmax')(x)
+# #
+# #
+# tf_model=Model(inputs=vgg16_base.input,outputs=out)
 #
+# # tf_model.summary()
 #
-tf_model=Model(inputs=vgg16_base.input,outputs=out)
-
-# tf_model.summary()
-
-for layer in tf_model.layers[:20]:
-    layer.trainable=False
-
-tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
-
-history = tf_model.fit(X_train,y_train,validation_data=(X_val, y_val),epochs=50)
-
+# for layer in tf_model.layers[:20]:
+#     layer.trainable=False
+#
+# tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+#
+# # history = tf_model.fit(X_train,y_train,validation_data=(X_val, y_val),epochs=10)
+#
 # history = tf_model.fit(X_train, y_train, batch_size = 1, epochs = 20, initial_epoch = 0,
 #                       validation_data = (X_val, y_val))
 
@@ -289,9 +387,9 @@ history = tf_model.fit(X_train,y_train,validation_data=(X_val, y_val),epochs=50)
 # print("Initial accuracy: {:.2f}".format(accuracy1))
 # print("---------------------------")
 #
-#------------------------------
-#- Visualização Features Maps -
-#------------------------------
+# ------------------------------
+# - Visualização Features Maps -
+# ------------------------------
 #
 # for layer in new_model.layers:
 #     # check for convolutional layer
@@ -301,7 +399,7 @@ history = tf_model.fit(X_train,y_train,validation_data=(X_val, y_val),epochs=50)
 #     filters, biases = layer.get_weights()
 #     print(layer.name, filters.shape)
 #
-# filters, biases = new_model.layers[5].get_weights()
+# filters, biases = new_model.layers[1].get_weights()
 #
 # f_min, f_max = filters.min(), filters.max()
 # filters = (filters - f_min) / (f_max - f_min)
@@ -400,13 +498,13 @@ history = tf_model.fit(X_train,y_train,validation_data=(X_val, y_val),epochs=50)
 # #
 # OldHistory = pickle.load(open('trainHistory' , 'rb'))
 #
-tf_model.save('VGG16Novo.tf')
+model.save('GoogleNet50Epochs.tf')
 print("Modelo salvo com sucesso!")
 
 with open('trainHistory', 'wb') as file_pi:
     pickle.dump(history.history, file_pi)
 print("Histórico de treino salvo com sucesso!")
-# #
+#
 # NewHistory = pickle.load(open('trainHistory' , 'rb'))
 # #
 # OldHistory['accuracy'].extend(NewHistory['accuracy'])
@@ -416,8 +514,8 @@ print("Histórico de treino salvo com sucesso!")
 #     pickle.dump(OldHistory, file_pi)
 #
 #
-OldHistory = pickle.load(open('trainHistory' , 'rb'))
-
+OldHistory = pickle.load(open('trainHistory', 'rb'))
+#
 plt.plot(OldHistory['accuracy'])
 plt.plot(OldHistory['val_accuracy'])
 plt.title('Model Accuracy')
@@ -434,10 +532,9 @@ plt.xlabel('Epochs')
 plt.legend(['train', 'test'])
 plt.show()
 
-
-#------------------------------------------------
-#- Verificação de precisão e inicio treinamento -
-#------------------------------------------------
+# ------------------------------------------------
+# - Verificação de precisão e inicio treinamento -
+# ------------------------------------------------
 #
 # loss1, accuracy1 = new_model.evaluate(X_val, y_val, steps = 20)
 #
@@ -462,9 +559,9 @@ plt.show()
 # plt.show()
 
 
-#-----------------------
-#- Predição de imagens -
-#-----------------------
+# -----------------------
+# - Predição de imagens -
+# -----------------------
 
 # Pegando os diretórios da base de dados.
 # chokkan_dir = glob.glob(os.path.join('Chokkan/', '*'))
@@ -579,9 +676,9 @@ plt.show()
 #
 # plt.show()
 
-#---------------------------------
-#- Implementação da CNN - Manual -
-#---------------------------------
+# ---------------------------------
+# - Implementação da CNN - Manual -
+# ---------------------------------
 
 # inp = Input((224,224,3))
 # conv1 = Conv2D(64, (5,5), padding='valid', activation= 'relu')(inp)
@@ -618,9 +715,9 @@ plt.show()
 # plt.show()
 
 
-#----------------------------------
-#- Implementação TransferLearning -
-#----------------------------------
+# ----------------------------------
+# - Implementação TransferLearning -
+# ----------------------------------
 
 # vgg = keras.applications.VGG16(input_shape=(224,224,3), include_top = False, weights= 'imagenet')
 #
@@ -650,4 +747,3 @@ plt.show()
 #
 # history = tf_model.fit(X_train, y_train, batch_size = 1, epochs = 30, initial_epoch = 0,
 #                        validation_data = (X_val, y_val), callbacks=[lr_red, chkpoint])
-
