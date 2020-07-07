@@ -103,7 +103,7 @@ y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l
 # Finalização da categorização.
 y = to_categorical(y, 6)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.1, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, random_state=42)
 
 X = []
 
@@ -173,7 +173,7 @@ print("The number of occuranc of each class in the dataset = %s " % dict(zip(uni
 
 #
 #
-# googlenet_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# VGG16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
 googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
 # resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
 # resnet_base = InceptionResNetV2(include_top=False, weights='imagenet', input_shape=(224,224,3))
@@ -202,11 +202,28 @@ base_learning_rate = 0.0001
 acc_per_fold = []
 loss_per_fold = []
 
-# train_generator = datagen.flow(X_train, y_train, batch_size=32)
-# val_generator = datagen.flow(X_val, y_val, batch_size=32)
-
 train_generator = np.concatenate((X_train, X_val))
 val_generator = np.concatenate((y_val, y_train))
+
+# x = googlenet_base.output
+# x = GlobalAveragePooling2D(name='avg_pool_2D')(x)
+# x = Dense(128, activation='relu')(x)
+# x = Dropout(0.4)(x)
+# predictions = Dense(6, activation='softmax', name='classifcation_softmax_6')(x)
+# model = Model(inputs=googlenet_base.input, outputs=predictions)
+#
+# for layer in googlenet_base.layers:
+#         layer.trainable = False
+#
+# model.compile(loss='categorical_crossentropy',
+#                   optimizer=optimizers.RMSprop(lr=2e-5),
+#                   metrics=['accuracy'])
+#
+# history = model.fit(X_train,y_train,
+#                         validation_data=(X_val, y_val),
+#                         epochs=50,
+#                         verbose=1)
+
 
 # K-fold Cross Validation model evaluation
 kfold = KFold(n_splits=10, shuffle=True)
@@ -214,14 +231,20 @@ fold_no = 1
 for train, test in kfold.split(train_generator, val_generator):
 
     # Define the model architecture
+    # model = models.Sequential()
+    # model.add(googlenet_base)
+    # model.add(layers.Flatten())
+    # model.add(layers.Dense(128, activation='relu'))
+    # model.add(layers.Dense(6, activation='softmax'))
+
     x = googlenet_base.output
-    x = GlobalAveragePooling2D(name='avg_pool')(x)
-    # x = Dense(1024, activation='relu')(x)
+    x = GlobalAveragePooling2D(name='avg_pool_2D')(x)
+    x = Dense(128, activation='relu')(x)
     x = Dropout(0.4)(x)
-    predictions = Dense(6, activation='softmax')(x)
+    predictions = Dense(6, activation='softmax', name='classifcation_softmax_6')(x)
     model = Model(inputs=googlenet_base.input, outputs=predictions)
 
-    # plot_model(model, to_file='model.png')
+    # plot_model(model, to_file='InceptionV3.png')
     # from IPython.display import SVG
     # from keras.utils.vis_utils import model_to_dot
     #
@@ -230,11 +253,14 @@ for train, test in kfold.split(train_generator, val_generator):
     # plt.show()
 
     #Compile the model
-    for layer in googlenet_base.layers:
-        layer.trainable = False
+    print('Number of trainable weights before freezing the conv base:', len(model.trainable_weights))
+    googlenet_base.trainable = False
+    print('Number of trainable weights after freezing the conv base:', len(model.trainable_weights))
+    # for layer in googlenet_base.layers:
+    #     layer.trainable = False
 
-    model.compile(optimizer=optimizers.SGD(lr=1e-4,momentum=0.9),
-                  loss='categorical_crossentropy',
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=optimizers.RMSprop(lr=2e-5),
                   metrics=['accuracy'])
 
     # Generate a print
@@ -242,7 +268,8 @@ for train, test in kfold.split(train_generator, val_generator):
     print(f'Training for fold {fold_no} ...')
 
     # Fit data to model
-    history = model.fit(train_generator[train],val_generator[train],
+    history = model.fit(train_generator[train], val_generator[train],
+                        batch_size=32,
                         validation_data=(train_generator[test],val_generator[test]),
                         epochs=20,
                         verbose=1)
