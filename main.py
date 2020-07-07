@@ -5,6 +5,7 @@ import keras as keras
 import numpy
 import numpy as numpy
 from keras.callbacks import ModelCheckpoint
+from keras.datasets import cifar10
 from keras.legacy import layers
 from matplotlib import pyplot
 from nets.nn import Sequential
@@ -25,13 +26,13 @@ from sklearn.model_selection import train_test_split, KFold
 import keras
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Model
-from keras.optimizers import Nadam, Adam
-from keras.utils import to_categorical
+from keras.optimizers import Nadam, Adam, Adadelta
+from keras.utils import to_categorical, plot_model
 from keras.layers import Dropout, Flatten, Input, Dense
 from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, GlobalAveragePooling2D
 from keras.models import model_from_json
 from keras.models import Sequential
-from keras import optimizers, models
+from keras import optimizers, models, initializers
 
 from keras import layers
 from keras import models
@@ -104,11 +105,6 @@ y = to_categorical(y, 6)
 
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.1, random_state=42)
 
-print(len(X_train))
-print(len(y_train))
-print(len(X_val))
-print(len(y_val))
-
 X = []
 
 # Evita problemas de overfitting (Aumenta o data_set)
@@ -177,8 +173,8 @@ print("The number of occuranc of each class in the dataset = %s " % dict(zip(uni
 
 #
 #
-# vgg16_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
-# googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
+# googlenet_base = tf.keras.applications.VGG16(input_shape=(224,224,3), include_top=False, weights='imagenet')
+googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
 # resnet_base = tf.keras.applications.ResNet101V2(input_shape=(224,224,3), include_top=False, weights='imagenet')
 # resnet_base = InceptionResNetV2(include_top=False, weights='imagenet', input_shape=(224,224,3))
 # resnet_base = ResNet50(include_top=False, weights='imagenet', input_shape=(224, 224, 3))
@@ -209,26 +205,35 @@ loss_per_fold = []
 # train_generator = datagen.flow(X_train, y_train, batch_size=32)
 # val_generator = datagen.flow(X_val, y_val, batch_size=32)
 
-train_generator = np.concatenate((X_train, X_val), axis=0)
-val_generator = np.concatenate((y_train, y_val), axis=0)
+train_generator = np.concatenate((X_train, X_val))
+val_generator = np.concatenate((y_val, y_train))
 
 # K-fold Cross Validation model evaluation
 kfold = KFold(n_splits=10, shuffle=True)
 fold_no = 1
 for train, test in kfold.split(train_generator, val_generator):
+
     # Define the model architecture
-    googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
     x = GlobalAveragePooling2D(name='avg_pool')(x)
+    # x = Dense(1024, activation='relu')(x)
     x = Dropout(0.4)(x)
     predictions = Dense(6, activation='softmax')(x)
     model = Model(inputs=googlenet_base.input, outputs=predictions)
 
-    # Compile the model
+    # plot_model(model, to_file='model.png')
+    # from IPython.display import SVG
+    # from keras.utils.vis_utils import model_to_dot
+    #
+    # SVG(model_to_dot(model).create(prog='dot', format='svg'))
+    #
+    # plt.show()
+
+    #Compile the model
     for layer in googlenet_base.layers:
         layer.trainable = False
 
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer=optimizers.SGD(lr=1e-4,momentum=0.9),
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
@@ -238,7 +243,9 @@ for train, test in kfold.split(train_generator, val_generator):
 
     # Fit data to model
     history = model.fit(train_generator[train],val_generator[train],
-                        epochs=10)
+                        validation_data=(train_generator[test],val_generator[test]),
+                        epochs=20,
+                        verbose=1)
 
     # Generate generalization metrics
     scores = model.evaluate(train_generator[test], val_generator[test], verbose=0)
@@ -249,6 +256,35 @@ for train, test in kfold.split(train_generator, val_generator):
 
     # Increase fold number
     fold_no = fold_no + 1
+
+    Variavel = "GoogleNet10EpochsK-Folds"
+    Final = ".tf"
+    VariavelFinal = Variavel + str(fold_no-1) + Final
+
+    model.save(VariavelFinal)
+    print("Modelo salvo com sucesso!")
+
+    with open('trainHistory' + str(fold_no-1), 'wb') as file_pi:
+        pickle.dump(history.history, file_pi)
+    print("Histórico de treino salvo com sucesso!")
+
+    OldHistory = pickle.load(open('trainHistory' + str(fold_no-1), 'rb'))
+
+    plt.plot(OldHistory['accuracy'])
+    plt.plot(OldHistory['val_accuracy'])
+    plt.title('Model Accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epochs')
+    plt.legend(['train', 'test'])
+    plt.show()
+
+    plt.plot(OldHistory['loss'])
+    plt.plot(OldHistory['val_loss'])
+    plt.title('Model Loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epochs')
+    plt.legend(['train', 'test'])
+    plt.show()
 
 # == Provide average scores ==
 print('------------------------------------------------------------------------')
@@ -498,12 +534,12 @@ print('------------------------------------------------------------------------'
 # #
 # OldHistory = pickle.load(open('trainHistory' , 'rb'))
 #
-model.save('GoogleNet50Epochs.tf')
-print("Modelo salvo com sucesso!")
-
-with open('trainHistory', 'wb') as file_pi:
-    pickle.dump(history.history, file_pi)
-print("Histórico de treino salvo com sucesso!")
+# model.save('GoogleNet50Epochs.tf')
+# print("Modelo salvo com sucesso!")
+#
+# with open('trainHistory', 'wb') as file_pi:
+#     pickle.dump(history.history, file_pi)
+# print("Histórico de treino salvo com sucesso!")
 #
 # NewHistory = pickle.load(open('trainHistory' , 'rb'))
 # #
@@ -514,23 +550,23 @@ print("Histórico de treino salvo com sucesso!")
 #     pickle.dump(OldHistory, file_pi)
 #
 #
-OldHistory = pickle.load(open('trainHistory', 'rb'))
+# OldHistory = pickle.load(open('trainHistory', 'rb'))
+# #
+# plt.plot(OldHistory['accuracy'])
+# plt.plot(OldHistory['val_accuracy'])
+# plt.title('Model Accuracy')
+# plt.ylabel('Accuracy')
+# plt.xlabel('Epochs')
+# plt.legend(['train', 'test'])
+# plt.show()
 #
-plt.plot(OldHistory['accuracy'])
-plt.plot(OldHistory['val_accuracy'])
-plt.title('Model Accuracy')
-plt.ylabel('Accuracy')
-plt.xlabel('Epochs')
-plt.legend(['train', 'test'])
-plt.show()
-
-plt.plot(OldHistory['loss'])
-plt.plot(OldHistory['val_loss'])
-plt.title('Model Loss')
-plt.ylabel('Loss')
-plt.xlabel('Epochs')
-plt.legend(['train', 'test'])
-plt.show()
+# plt.plot(OldHistory['loss'])
+# plt.plot(OldHistory['val_loss'])
+# plt.title('Model Loss')
+# plt.ylabel('Loss')
+# plt.xlabel('Epochs')
+# plt.legend(['train', 'test'])
+# plt.show()
 
 # ------------------------------------------------
 # - Verificação de precisão e inicio treinamento -
