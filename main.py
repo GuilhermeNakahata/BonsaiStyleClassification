@@ -90,7 +90,6 @@ y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l
 # Finalização da categorização.
 y = to_categorical(y, 6)
 
-
 # Evita problemas de overfitting (Aumenta o data_set)
 datagen = ImageDataGenerator(
     zoom_range=0.1,  # Aleatory zoom
@@ -102,10 +101,9 @@ datagen = ImageDataGenerator(
 
 
 def evaluate_model(X_train, X_val, y_train, y_val):
-
     datagen.fit(X_train)
 
-    googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224,224,3), include_top=False, weights='imagenet')
+    googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
     x = GlobalAveragePooling2D(name='avg_pool_2D')(x)
     x = Dense(128, activation='relu')(x)
@@ -114,35 +112,65 @@ def evaluate_model(X_train, X_val, y_train, y_val):
     model = Model(inputs=googlenet_base.input, outputs=predictions)
 
     for layer in googlenet_base.layers:
-            layer.trainable = False
+        layer.trainable = False
 
     model.compile(loss='categorical_crossentropy',
-                      optimizer=optimizers.RMSprop(lr=2e-5),
-                      metrics=['accuracy'])
+                  optimizer=optimizers.RMSprop(lr=2e-5),
+                  metrics=['accuracy'])
 
     history = model.fit(X_train,y_train,
                             validation_data=(X_val, y_val),
-                            epochs=2,
+                            epochs=100,
                             verbose=1)
 
-    _, val_acc = model.evaluate(X_val, y_val, verbose = 1)
 
-    return model, val_acc
+    _, val_acc = model.evaluate(X_val, y_val, verbose=1)
+
+    return model, val_acc, history
 
 n_folds = 10
-cv_scores, model_history = list(), list()
+cv_scores = list()
 for index in range(n_folds):
     print('-----------------------------------------------------------------')
-    print('Epoca ' + index)
+    print('Epoca ' + str(index))
     # split data
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.10, random_state = np.random.randint(1,1000, 1)[0])
+    r_state = np.random.randint(1, 1000, 1)[0]
+    print(r_state)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.10, stratify=y, random_state=r_state)
     # evaluate model
-    model, test_acc = evaluate_model(X_train, X_val, y_train, y_val)
+    model, test_acc, history = evaluate_model(X_train, X_val, y_train, y_val)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
-    model_history.append(model)
+
+    Variavel = "GoogleNet10EpochsK-Folds"
+    Final = ".tf"
+    VariavelFinal = Variavel + str(index - 1) + Final
+
+    model.save(VariavelFinal)
+    print("Modelo salvo com sucesso!")
+
+    with open('trainHistory' + str(index - 1), 'wb') as file_pi:
+        pickle.dump(history.history, file_pi)
+    print("Histórico de treino salvo com sucesso!")
+
+    # OldHistory = pickle.load(open('trainHistory' + str(index-1), 'rb'))
+
+    # plt.plot(OldHistory['accuracy'])
+    # plt.plot(OldHistory['val_accuracy'])
+    # plt.title('Model Accuracy')
+    # plt.ylabel('Accuracy')
+    # plt.xlabel('Epochs')
+    # plt.legend(['train', 'test'])
+    # plt.show()
+    #
+    # plt.plot(OldHistory['loss'])
+    # plt.plot(OldHistory['val_loss'])
+    # plt.title('Model Loss')
+    # plt.ylabel('Loss')
+    # plt.xlabel('Epochs')
+    # plt.legend(['train', 'test'])
+    # plt.show()
+
     print('-----------------------------------------------------------------')
 
 print('Estimated Accuracy %.3f (%.3f)' % (np.mean(cv_scores), np.std(cv_scores)))
-
-
