@@ -43,19 +43,16 @@ import cv2 as cv
 import os
 import glob
 
-
-
 # ----------------
 # - Treina a CNN -
 # ----------------
-def evaluate_model(X_train, X_val, y_train, y_val, datagen):
-    datagen.fit(X_train)
+def evaluate_model(trainGenerator, valGenerator):
 
     googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
     x = GlobalAveragePooling2D(name='avg_pool_2D')(x)
     x = Dense(128, activation='relu')(x)
-    x = Dropout(0.4)(x)
+    x = Dropout(0.3)(x)
     predictions = Dense(6, activation='softmax', name='classifcation_softmax_6')(x)
     model = Model(inputs=googlenet_base.input, outputs=predictions)
 
@@ -63,11 +60,16 @@ def evaluate_model(X_train, X_val, y_train, y_val, datagen):
         layer.trainable = False
 
     model.compile(loss='categorical_crossentropy',
-                  optimizer=optimizers.RMSprop(lr=2e-5),
+                  optimizer=optimizers.SGD(lr=1e-4,
+                                           momentum=0.9),
                   metrics=['accuracy'])
 
-    history = model.fit(X_train, y_train,
-                        validation_data=(X_val, y_val),
+    # model.compile(loss='categorical_crossentropy',
+    #               optimizer=optimizers.RMSprop(lr=2e-5),
+    #               metrics=['accuracy'])
+
+    history = model.fit(trainGenerator,
+                        validation_data=val_genarator,
                         epochs=100,
                         verbose=1)
 
@@ -219,6 +221,22 @@ def ImprimirExemplos(label, arrayImages):
 
     return True
 
+# -----------------------------------------------------
+# - Imprime exemplos de estilos com data augmentation -
+# -----------------------------------------------------
+
+def ImprimirDataAugmentation(X_train, y_train):
+    train_generator1 = train_datagen.flow(X_train[15:16], y_train[15:16], batch_size=1)
+    examples = [next(train_generator1) for i in range(0,6)]
+    fig, ax = plt.subplots(2,2, figsize=(15, 15))
+    a = 1;
+    for i in range(2):
+        for j in range(2):
+            ax[i][j].imshow(examples[a][0][0])
+            a = a + 1
+
+    plt.show()
+
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds-1.tf')
 # print("Modelo carregado!")
 #
@@ -228,13 +246,15 @@ def ImprimirExemplos(label, arrayImages):
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
 
-datagen = ImageDataGenerator(
+train_datagen = ImageDataGenerator(
     zoom_range=0.1,  # Aleatory zoom
-    rotation_range=15,
     width_shift_range=0.1,  # horizontal shift
     height_shift_range=0.1,  # vertical shift
     horizontal_flip=True,
-    vertical_flip=True)
+    vertical_flip=True,
+    shear_range=0.1)
+
+val_datagen = ImageDataGenerator()
 
 n_folds = 10
 cv_scores = list()
@@ -246,8 +266,10 @@ for index in range(n_folds):
     r_state = np.random.randint(1, 1000, 1)[0]
     print(r_state)
     X_train, X_val, y_train, y_val = ReparteDataSet(X,y,r_state)
+    train_generator = train_datagen.flow(X_train, y_train, batch_size=10)
+    val_genarator = val_datagen.flow(X_val, y_val, batch_size=10)
     # evaluate model
-    model, test_acc, history = evaluate_model(X_train, X_val, y_train, y_val, datagen)
+    model, test_acc, history = evaluate_model(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
