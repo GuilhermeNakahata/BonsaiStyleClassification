@@ -9,8 +9,7 @@ from keras.datasets import cifar10
 from keras.legacy import layers
 from matplotlib import pyplot
 from nets.nn import Sequential
-from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
-from tensorflow.python.keras.applications.resnet import ResNet50
+from keras.applications.resnet50 import ResNet50
 
 warnings.filterwarnings('always')
 warnings.filterwarnings('ignore')
@@ -43,16 +42,101 @@ import cv2 as cv
 import os
 import glob
 
-# ----------------
-# - Treina a CNN -
-# ----------------
-def evaluate_model(trainGenerator, valGenerator):
+
+# -----------------
+# - Cria a ResNet -
+# -----------------
+
+def evaluate_modelResNet(trainGenerator, valGenerator):
+
+    restnet = ResNet50(include_top=False, weights='imagenet', input_shape=(224,224,3))
+
+    output = restnet.layers[-1].output
+    output = keras.layers.Flatten()(output)
+
+    restnet = Model(restnet.input, output)
+
+    for layer in restnet.layers:
+        layer.trainable = False
+
+    #
+    # model = Sequential()
+    # model.add(restnet)
+    # model.add(Dense(128, activation='relu' , input_dim=(224,244,3)))
+    # model.add(Dropout(0.4))
+    # # model.add(Dense(256, activation='relu'))
+    # # model.add(Dropout(0.3))
+    # model.add(Dense(6, activation='softmax'))
+    # model.compile(loss='categorical_crossentropy',
+    #               optimizer=optimizers.RMSprop(lr=2e-5),
+    #               metrics=['accuracy'])
+
+    restnet.trainable = True
+    set_trainable = False
+    for layer in restnet.layers:
+        if layer.name in ['conv5_block3_2_conv', 'conv5_block3_2_bn', 'conv5_block3_2_relu', 'conv5_block3_3_conv', 'conv5_block3_3_bn', 'conv5_block3_add', 'conv5_block3_out', 'flatten']:
+            set_trainable = True
+        if set_trainable:
+            layer.trainable = True
+        else:
+            layer.trainable = False
+
+    layers = [(layer, layer.name, layer.trainable) for layer in restnet.layers]
+    pd.DataFrame(layers, columns=['Layer Type', 'Layer Name', 'Layer Trainable'])
+
+    model_finetuned = Sequential()
+    model_finetuned.add(restnet)
+    model_finetuned.add(Dense(256, activation='relu', input_dim=(224,244,3)))
+    model_finetuned.add(Dropout(0.4))
+    model_finetuned.add(Dense(128, activation='relu'))
+    model_finetuned.add(Dropout(0.3))
+    model_finetuned.add(Dense(6, activation='softmax'))
+    model_finetuned.compile(loss='categorical_crossentropy',optimizer=optimizers.RMSprop(lr=1e-5),metrics=['accuracy'])
+
+    model_finetuned.summary()
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model_finetuned)
+
+    return model, val_acc, history
+
+# ---------------------
+# - Continua a ResNet -
+# ---------------------
+
+def ContinuaResnet(trainGenerator, valGenerator):
+    resnetRetreino = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
+    print("Modelo carregado!")
+
+    resnetRetreino.summary()
+
+    for layer in resnetRetreino.layers:
+        layer.trainable = False
+
+    for layer in resnetRetreino.layers:
+        if layer.name in ['dense', 'dropout', 'dense_1', 'dropout_1', 'dense_2']:
+            layer.trainable = True
+
+    resnetRetreino.summary()
+
+    resnetRetreino.compile(loss='categorical_crossentropy',optimizer=optimizers.RMSprop(lr=1e-5),metrics=['accuracy'])
+
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, resnetRetreino)
+
+    return model, val_acc, history
+
+
+# --------------------
+# - Cria a GoogleNet -
+# --------------------
+
+def evaluate_modelGoogleNet(trainGenerator, valGenerator):
 
     googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
     x = GlobalAveragePooling2D(name='avg_pool_2D')(x)
     x = Dense(128, activation='relu')(x)
-    x = Dropout(0.3)(x)
+    x = Dropout(0.4)(x)
     predictions = Dense(6, activation='softmax', name='classifcation_softmax_6')(x)
     model = Model(inputs=googlenet_base.input, outputs=predictions)
 
@@ -68,15 +152,26 @@ def evaluate_model(trainGenerator, valGenerator):
     #               optimizer=optimizers.RMSprop(lr=2e-5),
     #               metrics=['accuracy'])
 
-    history = model.fit(trainGenerator,
-                        validation_data=val_genarator,
-                        epochs=100,
-                        verbose=1)
-
-    _, val_acc = model.evaluate(X_val, y_val, verbose=1)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
 
     return model, val_acc, history
 
+# -------------------
+# - Treina o modelo -
+# -------------------
+
+def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
+
+    print("Inicio Treinamento")
+
+    history = modelToTrain.fit(trainGenerator,
+                        validation_data=valGenerator,
+                        epochs=100,
+                        verbose=1)
+
+    _, val_acc = modelToTrain.evaluate(X_val, y_val, verbose=1)
+
+    return modelToTrain, val_acc, history
 
 # -----------------------
 # - Predição de imagens -
@@ -237,14 +332,37 @@ def ImprimirDataAugmentation(X_train, y_train):
 
     plt.show()
 
-# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds-1.tf')
+#--------------------------------
+#- Plota grafico de treinamento -
+#--------------------------------
+
+def PlotarGrafico():
+    OldHistory = pickle.load(open('trainHistory' + str(1), 'rb'))
+
+    plt.plot(OldHistory['accuracy'])
+    plt.plot(OldHistory['val_accuracy'])
+    plt.title('Model Accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epochs')
+    plt.legend(['train', 'test'])
+    plt.show()
+
+    plt.plot(OldHistory['loss'])
+    plt.plot(OldHistory['val_loss'])
+    plt.title('Model Loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epochs')
+    plt.legend(['train', 'test'])
+    plt.show()
+# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
-#
+
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,42)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,836)
 #
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
+# PlotarGrafico()
 
 train_datagen = ImageDataGenerator(
     zoom_range=0.1,  # Aleatory zoom
@@ -259,48 +377,33 @@ val_datagen = ImageDataGenerator()
 n_folds = 10
 cv_scores = list()
 X,y = AbreDataSet()
+indexEpochs = 1
 for index in range(n_folds):
     print('-----------------------------------------------------------------')
     print('Epoca ' + str(index))
     # split data
     r_state = np.random.randint(1, 1000, 1)[0]
     print(r_state)
-    X_train, X_val, y_train, y_val = ReparteDataSet(X,y,r_state)
-    train_generator = train_datagen.flow(X_train, y_train, batch_size=10)
-    val_genarator = val_datagen.flow(X_val, y_val, batch_size=10)
+    X_train, X_val, y_train, y_val = ReparteDataSet(X,y,836)
+    train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
+    val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
     # evaluate model
-    model, test_acc, history = evaluate_model(train_generator, val_genarator)
+    model, test_acc, history = ContinuaResnet(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
     Variavel = "GoogleNet10EpochsK-Folds"
     Final = ".tf"
-    VariavelFinal = Variavel + str(index - 1) + Final
+    VariavelFinal = Variavel + str(indexEpochs) + Final
 
     model.save(VariavelFinal)
     print("Modelo salvo com sucesso!")
 
-    with open('trainHistory' + str(index - 1), 'wb') as file_pi:
+    with open('trainHistory' + str(indexEpochs), 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
     print("Histórico de treino salvo com sucesso!")
 
-    # OldHistory = pickle.load(open('trainHistory' + str(index-1), 'rb'))
-
-    # plt.plot(OldHistory['accuracy'])
-    # plt.plot(OldHistory['val_accuracy'])
-    # plt.title('Model Accuracy')
-    # plt.ylabel('Accuracy')
-    # plt.xlabel('Epochs')
-    # plt.legend(['train', 'test'])
-    # plt.show()
-    #
-    # plt.plot(OldHistory['loss'])
-    # plt.plot(OldHistory['val_loss'])
-    # plt.title('Model Loss')
-    # plt.ylabel('Loss')
-    # plt.xlabel('Epochs')
-    # plt.legend(['train', 'test'])
-    # plt.show()
+    indexEpochs = indexEpochs + 1
 
     print('-----------------------------------------------------------------')
 
