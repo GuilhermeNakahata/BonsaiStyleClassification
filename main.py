@@ -354,6 +354,7 @@ def PlotarGrafico():
     plt.xlabel('Epochs')
     plt.legend(['train', 'test'])
     plt.show()
+
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
 
