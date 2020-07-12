@@ -186,7 +186,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
-                        epochs=100,
+                        epochs=50,
                         verbose=1)
 
     _, val_acc = modelToTrain.evaluate(X_val, y_val, verbose=1)
@@ -236,18 +236,19 @@ def PredizerImagem(model, X_train, X_val, y_train, y_val):
         if (not y_val_string[0][i] == pred[0][i]):
             mis_class1.append(i)
 
-    print(len(mis_class1))
+    print('O modelo acertou: ' + len(mis_class1))
 
     count = 0
     fig, ax = plt.subplots(3, 2)
     fig.set_size_inches(5, 5)
-    for i in range(3):
-        for j in range(2):
-            ax[i, j].imshow(X_val[mis_class[count]][:, :, ::-1])
-            ax[i, j].set_title("Predicted style : " + str(pred[0][mis_class[count]]) + "\n" + "Actual style : " + str(
-                y_val_string[0][mis_class[count]]))
-            plt.tight_layout()
-            count += 1
+    if len(mis_class)  > 6:
+        for i in range(3):
+            for j in range(2):
+                ax[i, j].imshow(X_val[mis_class[count]][:, :, ::-1])
+                ax[i, j].set_title("Predicted style : " + str(pred[0][mis_class[count]]) + "\n" + "Actual style : " + str(
+                    y_val_string[0][mis_class[count]]))
+                plt.tight_layout()
+                count += 1
 
     plt.show()
 
@@ -400,13 +401,17 @@ val_datagen = ImageDataGenerator()
 n_folds = 10
 cv_scores = list()
 X,y = AbreDataSet()
-indexEpochs = 3
+indexEpochs = 1
 for index in range(n_folds):
     print('-----------------------------------------------------------------')
-    print('Epoca ' + str(index))
+    print('Epoca ' + str(indexEpochs))
     # split data
     r_state = np.random.randint(1, 1000, 1)[0]
+    with open('RandomState', 'w') as file_pi:
+        file_pi.write('Epoca:' + str(indexEpochs) + ' Random State: ' + str(r_state))
+        file_pi.close()
     print(r_state)
+    print("Random State Salvo com sucesso!")
     X_train, X_val, y_train, y_val = ReparteDataSet(X,y,r_state)
     train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
