@@ -407,8 +407,8 @@ for index in range(n_folds):
     print('Epoca ' + str(indexEpochs))
     # split data
     r_state = np.random.randint(1, 1000, 1)[0]
-    with open('RandomState', 'w') as file_pi:
-        file_pi.write('Epoca:' + str(indexEpochs) + ' Random State: ' + str(r_state))
+    with open('RandomState', 'a') as file_pi:
+        file_pi.write('Epoca:' + str(indexEpochs) + ' Random State: ' + str(r_state) + '\n')
         file_pi.close()
     print(r_state)
     print("Random State Salvo com sucesso!")
