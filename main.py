@@ -1,13 +1,6 @@
 import pickle
 import warnings
 
-import keras as keras
-import numpy
-import numpy as numpy
-from keras.callbacks import ModelCheckpoint
-from keras.datasets import cifar10
-from keras.legacy import layers
-from matplotlib import pyplot
 from nets.nn import Sequential
 from keras.applications.resnet50 import ResNet50
 
@@ -18,23 +11,17 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import seaborn as sns
-
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split
 
 import keras
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Model
-from keras.optimizers import Nadam, Adam, Adadelta
-from keras.utils import to_categorical, plot_model
-from keras.layers import Dropout, Flatten, Input, Dense
-from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, GlobalAveragePooling2D
-from keras.models import model_from_json
+from keras.optimizers import Nadam
+from keras.utils import to_categorical
+from keras.layers import Dropout, Flatten, Dense
+from keras.layers import GlobalAveragePooling2D
 from keras.models import Sequential
-from keras import optimizers, models, initializers
-
-from keras import layers
-from keras import models
+from keras import optimizers
 
 import random
 import tensorflow as tf
@@ -42,12 +29,41 @@ import cv2 as cv
 import os
 import glob
 
+# ----------------
+# - Cria a VGG16 -
+# ----------------
+
+def evaluate_modelVGG16(trainGenerator, valGenerator):
+
+    print("Criando VGG16")
+
+    VGG16 = keras.applications.VGG16(include_top = False, weights= 'imagenet', input_shape=(224,224,3))
+
+    x = VGG16.output
+    x = Flatten()(x)
+    x = Dense(512,activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(256,activation='relu')(x)
+    x = Dropout(0.3)(x)
+    out = Dense(6,activation='softmax')(x)
+    tf_model=Model(inputs=VGG16.input,outputs=out)
+
+    for layer in tf_model.layers[:20]:
+        layer.trainable=False
+
+    tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model)
+
+    return model, val_acc, history
 
 # -----------------
 # - Cria a ResNet -
 # -----------------
 
 def evaluate_modelResNet(trainGenerator, valGenerator):
+
+    print("Criando ResNet")
 
     restnet = ResNet50(include_top=False, weights='imagenet', input_shape=(224,224,3))
 
@@ -104,6 +120,9 @@ def evaluate_modelResNet(trainGenerator, valGenerator):
 # ---------------------
 
 def ContinuaResnet(trainGenerator, valGenerator):
+
+    print("Continua ResNet")
+
     resnetRetreino = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
     print("Modelo carregado!")
 
@@ -125,12 +144,13 @@ def ContinuaResnet(trainGenerator, valGenerator):
 
     return model, val_acc, history
 
-
 # --------------------
 # - Cria a GoogleNet -
 # --------------------
 
 def evaluate_modelGoogleNet(trainGenerator, valGenerator):
+
+    print("Criando GoogleNet")
 
     googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
@@ -336,8 +356,8 @@ def ImprimirDataAugmentation(X_train, y_train):
 #- Plota grafico de treinamento -
 #--------------------------------
 
-def PlotarGrafico():
-    OldHistory = pickle.load(open('trainHistory' + str(1), 'rb'))
+def PlotarGrafico(indexTrain):
+    OldHistory = pickle.load(open('trainHistory' + str(indexTrain), 'rb'))
 
     plt.plot(OldHistory['accuracy'])
     plt.plot(OldHistory['val_accuracy'])
@@ -355,15 +375,17 @@ def PlotarGrafico():
     plt.legend(['train', 'test'])
     plt.show()
 
-# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
+# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds3.tf')
 # print("Modelo carregado!")
-
+#
 # X1,y1 = AbreDataSet()
 # X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,836)
 #
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
-# PlotarGrafico()
+# PlotarGrafico(3)
+
+
 
 train_datagen = ImageDataGenerator(
     zoom_range=0.1,  # Aleatory zoom
@@ -378,18 +400,18 @@ val_datagen = ImageDataGenerator()
 n_folds = 10
 cv_scores = list()
 X,y = AbreDataSet()
-indexEpochs = 1
+indexEpochs = 3
 for index in range(n_folds):
     print('-----------------------------------------------------------------')
     print('Epoca ' + str(index))
     # split data
     r_state = np.random.randint(1, 1000, 1)[0]
     print(r_state)
-    X_train, X_val, y_train, y_val = ReparteDataSet(X,y,836)
+    X_train, X_val, y_train, y_val = ReparteDataSet(X,y,r_state)
     train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
     # evaluate model
-    model, test_acc, history = ContinuaResnet(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelVGG16(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
