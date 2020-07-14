@@ -57,6 +57,30 @@ def evaluate_modelVGG16(trainGenerator, valGenerator):
 
     return model, val_acc, history
 
+# --------------------
+# - Continua a VGG16 -
+# --------------------
+
+def ContinuaVGG16(trainGenerator, valGenerator):
+
+    print("Continua VGG16")
+
+    VGG16Treinada = keras.models.load_model('GoogleNet10EpochsK-Folds3.tf')
+    print("Modelo carregado!")
+
+    for layer in VGG16Treinada.layers:
+        layer.trainable = False
+
+    for layer in VGG16Treinada.layers:
+        if layer.name in ['dense', 'dropout', 'dense_1', 'dropout_1', 'dense_2']:
+            layer.trainable = True
+
+    VGG16Treinada.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, VGG16Treinada)
+
+    return model, val_acc, history
+
 # -----------------
 # - Cria a ResNet -
 # -----------------
@@ -186,7 +210,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
-                        epochs=50,
+                        epochs=10,
                         verbose=1)
 
     _, val_acc = modelToTrain.evaluate(X_val, y_val, verbose=1)
@@ -236,7 +260,7 @@ def PredizerImagem(model, X_train, X_val, y_train, y_val):
         if (not y_val_string[0][i] == pred[0][i]):
             mis_class1.append(i)
 
-    print('O modelo acertou: ' + len(mis_class1))
+    print('O modelo errou: ' + str(len(mis_class1)))
 
     count = 0
     fig, ax = plt.subplots(3, 2)
@@ -376,17 +400,15 @@ def PlotarGrafico(indexTrain):
     plt.legend(['train', 'test'])
     plt.show()
 
-# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds3.tf')
+# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,836)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,743)
 #
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
-# PlotarGrafico(3)
-
-
+# PlotarGrafico(1)
 
 train_datagen = ImageDataGenerator(
     zoom_range=0.1,  # Aleatory zoom
