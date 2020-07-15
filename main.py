@@ -45,7 +45,7 @@ def evaluate_modelVGG16(trainGenerator, valGenerator):
     x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
     x = Dropout(0.3)(x)
-    out = Dense(6,activation='softmax')(x)
+    out = Dense(7,activation='softmax')(x)
     tf_model=Model(inputs=VGG16.input,outputs=out)
 
     for layer in tf_model.layers[:20]:
@@ -237,11 +237,11 @@ def PredizerImagem(model, X_train, X_val, y_train, y_val):
     pred = model.predict(X_val)
     pred = np.argmax(pred, axis=1)
     pred = pd.DataFrame(pred).replace(
-        {0: 'chokkan', 1: 'fukunagashi', 2: 'kengai', 3: 'literatti', 4: 'moyogi', 5: 'shakan'})
+        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
 
     y_val_string = np.argmax(y_val, axis=1)
     y_val_string = pd.DataFrame(y_val_string).replace(
-        {0: 'chokkan', 1: 'fukunagashi', 2: 'kengai', 3: 'literatti', 4: 'moyogi', 5: 'shakan'})
+        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
 
     mis_class = []
     for i in range(len(y_val_string)):
@@ -285,13 +285,14 @@ def PredizerImagem(model, X_train, X_val, y_train, y_val):
 def AbreDataSet():
     chokkan_dir = glob.glob(os.path.join('Chokkan/', '*'))
     fukunagashi_dir = glob.glob(os.path.join('Fukunagashi/', '*'))
+    han_kengai_dir = glob.glob(os.path.join('Han-kengai/', '*'))
     kengai_dir = glob.glob(os.path.join('Kengai/', '*'))
     literatti_dir = glob.glob(os.path.join('Literatti/', '*'))
     moyogi_dir = glob.glob(os.path.join('Moyogi/', '*'))
     shakan_dir = glob.glob(os.path.join('Shakan/', '*'))
 
     # Compilando todos os caminhos.
-    X_path = chokkan_dir + fukunagashi_dir + kengai_dir + literatti_dir + moyogi_dir + shakan_dir
+    X_path = chokkan_dir + fukunagashi_dir + han_kengai_dir + kengai_dir + literatti_dir + moyogi_dir + shakan_dir
 
     X = []
 
@@ -310,15 +311,16 @@ def AbreDataSet():
     # One-Hot-Encondig.
     l_chokkan = np.zeros(len(chokkan_dir))
     l_fukunagashi = np.ones(len(fukunagashi_dir))
-    l_kengai = 2 * np.ones(len(kengai_dir))
-    l_literatti = 3 * np.ones(len(literatti_dir))
-    l_moyogi = 4 * np.ones(len(moyogi_dir))
-    l_shakan = 5 * np.ones(len(shakan_dir))
+    l_han_kengai = 2 * np.ones(len(han_kengai_dir))
+    l_kengai = 3 * np.ones(len(kengai_dir))
+    l_literatti = 4 * np.ones(len(literatti_dir))
+    l_moyogi = 5 * np.ones(len(moyogi_dir))
+    l_shakan = 6 * np.ones(len(shakan_dir))
 
-    y = np.concatenate((l_chokkan, l_fukunagashi, l_kengai, l_literatti, l_moyogi, l_shakan))
+    y = np.concatenate((l_chokkan, l_fukunagashi, l_han_kengai, l_kengai, l_literatti, l_moyogi, l_shakan))
 
     # Finalização da categorização.
-    y = to_categorical(y, 6)
+    y = to_categorical(y, 7)
 
     return X, y
 
@@ -404,7 +406,7 @@ def PlotarGrafico(indexTrain):
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,743)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,692)
 #
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
