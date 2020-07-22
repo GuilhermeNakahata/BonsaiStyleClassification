@@ -65,7 +65,7 @@ def ContinuaVGG16(trainGenerator, valGenerator):
 
     print("Continua VGG16")
 
-    VGG16Treinada = keras.models.load_model('GoogleNet10EpochsK-Folds3.tf')
+    VGG16Treinada = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
     print("Modelo carregado!")
 
     for layer in VGG16Treinada.layers:
@@ -179,18 +179,24 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator):
     googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
     x = GlobalAveragePooling2D(name='avg_pool_2D')(x)
-    x = Dense(128, activation='relu')(x)
-    x = Dropout(0.4)(x)
-    predictions = Dense(6, activation='softmax', name='classifcation_softmax_6')(x)
+    # x = Dense(128, activation='relu')(x)
+    # x = Dropout(0.4)(x)
+    x = Dense(512,activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(256,activation='relu')(x)
+    x = Dropout(0.3)(x)
+    predictions = Dense(7,activation='softmax')(x)
     model = Model(inputs=googlenet_base.input, outputs=predictions)
 
     for layer in googlenet_base.layers:
         layer.trainable = False
 
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=optimizers.SGD(lr=1e-4,
-                                           momentum=0.9),
-                  metrics=['accuracy'])
+    model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+
+    # model.compile(loss='categorical_crossentropy',
+    #               optimizer=optimizers.SGD(lr=1e-4,
+    #                                        momentum=0.9),
+    #               metrics=['accuracy'])
 
     # model.compile(loss='categorical_crossentropy',
     #               optimizer=optimizers.RMSprop(lr=2e-5),
@@ -210,7 +216,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
-                        epochs=10,
+                        epochs=100,
                         verbose=1)
 
     _, val_acc = modelToTrain.evaluate(X_val, y_val, verbose=1)
@@ -406,7 +412,7 @@ def PlotarGrafico(indexTrain):
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,692)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,588)
 #
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
@@ -440,7 +446,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
     # evaluate model
-    model, test_acc, history = evaluate_modelVGG16(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
