@@ -99,7 +99,7 @@ def evaluate_modelResNet(trainGenerator, valGenerator):
     for layer in restnet.layers:
         layer.trainable = False
 
-    #
+
     # model = Sequential()
     # model.add(restnet)
     # model.add(Dense(128, activation='relu' , input_dim=(224,244,3)))
@@ -130,7 +130,7 @@ def evaluate_modelResNet(trainGenerator, valGenerator):
     model_finetuned.add(Dropout(0.4))
     model_finetuned.add(Dense(128, activation='relu'))
     model_finetuned.add(Dropout(0.3))
-    model_finetuned.add(Dense(6, activation='softmax'))
+    model_finetuned.add(Dense(7, activation='softmax'))
     model_finetuned.compile(loss='categorical_crossentropy',optimizer=optimizers.RMSprop(lr=1e-5),metrics=['accuracy'])
 
     model_finetuned.summary()
@@ -206,6 +206,27 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator):
 
     return model, val_acc, history
 
+
+# ------------------------
+# - Continua a GoogleNet -
+# ------------------------
+
+def ContinuaGoogleNet(trainGenerator, valGenerator):
+
+    print("Continua ResNet")
+
+    googleNet = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
+    print("Modelo carregado!")
+
+    googleNet.summary()
+
+    googleNet.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, googleNet)
+
+    return model, val_acc, history
+
+
 # -------------------
 # - Treina o modelo -
 # -------------------
@@ -216,7 +237,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
-                        epochs=100,
+                        epochs=200,
                         verbose=1)
 
     _, val_acc = modelToTrain.evaluate(X_val, y_val, verbose=1)
@@ -408,11 +429,64 @@ def PlotarGrafico(indexTrain):
     plt.legend(['train', 'test'])
     plt.show()
 
+def PlotarGraficoTodosKfolds():
+
+    for indexKfolds in range(10):
+        OldHistory = pickle.load(open('trainHistory' + str(indexKfolds+1), 'rb'))
+
+        plt.plot(OldHistory['accuracy'])
+
+    plt.title('Model Accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epochs')
+    plt.legend(['kfolds-1', 'kfolds-2', 'kfolds-3', 'kfolds-4', 'kfolds-5', 'kfolds-6', 'kfolds-7', 'kfolds-8', 'kfolds-9', 'kfolds-10'])
+    plt.show()
+
+
+
+    for indexKfolds in range(10):
+        OldHistory = pickle.load(open('trainHistory' + str(indexKfolds+1), 'rb'))
+
+        plt.plot(OldHistory['val_accuracy'])
+
+    plt.title('Model Val_Accuracy')
+    plt.ylabel('Val_Accuracy')
+    plt.xlabel('Epochs')
+    plt.legend(['kfolds-1', 'kfolds-2', 'kfolds-3', 'kfolds-4', 'kfolds-5', 'kfolds-6', 'kfolds-7', 'kfolds-8', 'kfolds-9', 'kfolds-10'])
+    plt.show()
+
+
+    for indexKfolds in range(10):
+        OldHistory = pickle.load(open('trainHistory' + str(indexKfolds+1), 'rb'))
+
+        plt.plot(OldHistory['loss'])
+
+    plt.title('Model Loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epochs')
+    plt.legend(['kfolds-1', 'kfolds-2', 'kfolds-3', 'kfolds-4', 'kfolds-5', 'kfolds-6', 'kfolds-7', 'kfolds-8', 'kfolds-9', 'kfolds-10'])
+    plt.show()
+
+    for indexKfolds in range(10):
+        OldHistory = pickle.load(open('trainHistory' + str(indexKfolds+1), 'rb'))
+
+        plt.plot(OldHistory['val_loss'])
+
+    plt.title('Model Loss')
+    plt.ylabel('Val_Loss')
+    plt.xlabel('Epochs')
+    plt.legend(['kfolds-1', 'kfolds-2', 'kfolds-3', 'kfolds-4', 'kfolds-5', 'kfolds-6', 'kfolds-7', 'kfolds-8', 'kfolds-9', 'kfolds-10'])
+    plt.show()
+
+
+
+# PlotarGraficoTodosKfolds()
+
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,588)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,97)
 #
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
@@ -446,7 +520,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
     # evaluate model
-    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelResNet(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
