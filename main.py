@@ -478,7 +478,9 @@ def PlotarGraficoTodosKfolds():
     plt.legend(['kfolds-1', 'kfolds-2', 'kfolds-3', 'kfolds-4', 'kfolds-5', 'kfolds-6', 'kfolds-7', 'kfolds-8', 'kfolds-9', 'kfolds-10'])
     plt.show()
 
-
+#---------------------------
+#- Começa aqui o algoritmo -
+#---------------------------
 
 # PlotarGraficoTodosKfolds()
 
