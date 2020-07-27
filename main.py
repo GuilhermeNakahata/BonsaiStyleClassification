@@ -168,6 +168,40 @@ def ContinuaResnet(trainGenerator, valGenerator):
 
     return model, val_acc, history
 
+# ---------------------
+# - Cria a ResNetNova -
+# ---------------------
+
+def evaluate_modelResNetNova(trainGenerator, valGenerator):
+
+    print("Criando ResNet")
+
+    restnet = ResNet50(include_top=False, weights='imagenet', input_shape=(224,224,3))
+
+    output = restnet.layers[-1].output
+    output = keras.layers.Flatten()(output)
+
+    restnet = Model(restnet.input, output)
+
+    for layer in restnet.layers:
+        layer.trainable = False
+
+
+    model = Sequential()
+    model.add(restnet)
+    model.add(Dense(512, activation='relu' , input_dim=(224,244,3)))
+    model.add(Dropout(0.3))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dropout(0.3))
+    model.add(Dense(7, activation='softmax'))
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=optimizers.RMSprop(lr=2e-5),
+                  metrics=['accuracy'])
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
+
+    return model, val_acc, history
+
 # --------------------
 # - Cria a GoogleNet -
 # --------------------
@@ -237,7 +271,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
-                        epochs=200,
+                        epochs=100,
                         verbose=1)
 
     _, val_acc = modelToTrain.evaluate(X_val, y_val, verbose=1)
@@ -480,15 +514,14 @@ def PlotarGraficoTodosKfolds():
 
 #---------------------------
 #- Começa aqui o algoritmo -
-#---------------------------
 
 # PlotarGraficoTodosKfolds()
 
-# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
+# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds2.tf')
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,97)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,607)
 #
 # PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
@@ -522,7 +555,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
     # evaluate model
-    model, test_acc, history = evaluate_modelResNet(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
