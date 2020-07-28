@@ -3,6 +3,7 @@ import warnings
 
 from nets.nn import Sequential
 from keras.applications.resnet50 import ResNet50
+from tensorflow.python.keras.applications.xception import Xception
 
 warnings.filterwarnings('always')
 warnings.filterwarnings('ignore')
@@ -187,16 +188,49 @@ def evaluate_modelResNetNova(trainGenerator, valGenerator):
     for layer in restnet.layers:
         layer.trainable = False
 
+    x = restnet.output
+    x = Flatten()(x)
+    x = Dense(3078,activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(256,activation='relu')(x)
+    x = Dropout(0.2)(x)
+    out = Dense(7,activation='softmax')(x)
+    tf_model=Model(inputs=restnet.input,outputs=out)
 
-    model = Sequential()
-    model.add(restnet)
-    model.add(Dense(512, activation='relu' , input_dim=(224,244,3)))
-    model.add(Dropout(0.3))
-    model.add(Dense(512, activation='relu'))
-    model.add(Dropout(0.3))
-    model.add(Dense(7, activation='softmax'))
-    model.compile(loss='categorical_crossentropy',
+    tf_model.compile(loss='categorical_crossentropy',
                   optimizer=optimizers.RMSprop(lr=2e-5),
+                  metrics=['accuracy'])
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model)
+
+    return model, val_acc, history
+
+
+# -------------------
+# - Cria a Xception -
+# -------------------
+
+def evaluate_modelXception(trainGenerator, valGenerator):
+
+    print("Criando ResNet")
+
+    xCeption = Xception(input_shape=(224,224,3), weights='imagenet', include_top=False)
+
+    for layer in xCeption.layers:
+        layer.trainable = False
+
+    x = xCeption.output
+    x = GlobalAveragePooling2D()(x)
+    x = Dense(3078,activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(256,activation='relu')(x)
+    x = Dropout(0.2)(x)
+    predictions = Dense(7, activation='softmax')(x)
+
+    model = Model(xCeption.input, predictions)
+
+    model.compile(optimizer='nadam',
+                  loss='categorical_crossentropy',  # categorical_crossentropy if multi-class classifier
                   metrics=['accuracy'])
 
     model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
@@ -714,7 +748,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
     # evaluate model
-    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelXception(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
