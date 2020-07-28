@@ -28,6 +28,7 @@ import tensorflow as tf
 import cv2 as cv
 import os
 import glob
+import sklearn.metrics as metrics
 
 # ----------------
 # - Cria a VGG16 -
@@ -41,10 +42,10 @@ def evaluate_modelVGG16(trainGenerator, valGenerator):
 
     x = VGG16.output
     x = Flatten()(x)
-    x = Dense(512,activation='relu')(x)
+    x = Dense(3078,activation='relu')(x)
     x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
-    x = Dropout(0.3)(x)
+    x = Dropout(0.2)(x)
     out = Dense(7,activation='softmax')(x)
     tf_model=Model(inputs=VGG16.input,outputs=out)
 
@@ -282,18 +283,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
 # - Predição de imagens -
 # -----------------------
 
-def PredizerImagem(model, X_train, X_val, y_train, y_val):
-
-    # Evita problemas de overfitting (Parece que modifica ligeiramente a imagem)
-    datagen = ImageDataGenerator(
-        zoom_range=0.1,  # Aleatory zoom
-        rotation_range=15,
-        width_shift_range=0.1,  # horizontal shift
-        height_shift_range=0.1,  # vertical shift
-        horizontal_flip=True,
-        vertical_flip=True)
-
-    datagen.fit(X_train)
+def PredizerImagem(model, X_val, y_val):
 
     pred = model.predict(X_val)
     pred = np.argmax(pred, axis=1)
@@ -303,6 +293,10 @@ def PredizerImagem(model, X_train, X_val, y_train, y_val):
     y_val_string = np.argmax(y_val, axis=1)
     y_val_string = pd.DataFrame(y_val_string).replace(
         {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
+
+    confusion_matrix = metrics.confusion_matrix(y_true=y_val_string, y_pred=pred)
+
+    print(confusion_matrix)
 
     mis_class = []
     for i in range(len(y_val_string)):
@@ -338,6 +332,23 @@ def PredizerImagem(model, X_train, X_val, y_train, y_val):
     plt.show()
 
     return True
+
+# -----------------------
+# - Predição de imagens -
+# -----------------------
+
+def montarConfusionMatrix10Folds(model, X_val, y_val):
+
+    pred = model.predict(X_val)
+    pred = np.argmax(pred, axis=1)
+    pred = pd.DataFrame(pred).replace(
+        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
+
+    y_val_string = np.argmax(y_val, axis=1)
+    y_val_string = pd.DataFrame(y_val_string).replace(
+        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
+
+    return y_val_string, pred
 
 # ------------------
 # - Abre o DataSet -
@@ -463,6 +474,10 @@ def PlotarGrafico(indexTrain):
     plt.legend(['train', 'test'])
     plt.show()
 
+#-------------------------------------
+#- Plota o grafico de todos os folds -
+#-------------------------------------
+
 def PlotarGraficoTodosKfolds():
 
     for indexKfolds in range(10):
@@ -512,18 +527,162 @@ def PlotarGraficoTodosKfolds():
     plt.legend(['kfolds-1', 'kfolds-2', 'kfolds-3', 'kfolds-4', 'kfolds-5', 'kfolds-6', 'kfolds-7', 'kfolds-8', 'kfolds-9', 'kfolds-10'])
     plt.show()
 
+#----------------------------
+#- Monta matriz de confusao -
+#----------------------------
+
+def montarMatriz():
+    model = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
+    print("Modelo número 1 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,97)
+
+    y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val1, y_val1)
+
+    #----------------------------
+
+    model1 = keras.models.load_model('GoogleNet10EpochsK-Folds2.tf')
+    print("Modelo número 2 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,794)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model1, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model2 = keras.models.load_model('GoogleNet10EpochsK-Folds3.tf')
+    print("Modelo número 3 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,427)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model2, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model3 = keras.models.load_model('GoogleNet10EpochsK-Folds4.tf')
+    print("Modelo número 4 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,298)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model3, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model4 = keras.models.load_model('GoogleNet10EpochsK-Folds5.tf')
+    print("Modelo número 5 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,339)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model4, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model5 = keras.models.load_model('GoogleNet10EpochsK-Folds6.tf')
+    print("Modelo número 6 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,748)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model5, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model6 = keras.models.load_model('GoogleNet10EpochsK-Folds7.tf')
+    print("Modelo número 7 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,987)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model6, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model7 = keras.models.load_model('GoogleNet10EpochsK-Folds8.tf')
+    print("Modelo número 8 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,151)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model7, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model8 = keras.models.load_model('GoogleNet10EpochsK-Folds9.tf')
+    print("Modelo número 9 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,516)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model8, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    #----------------------------
+
+    model9 = keras.models.load_model('GoogleNet10EpochsK-Folds10.tf')
+    print("Modelo número 10 carregado!")
+
+    X1,y1 = AbreDataSet()
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,757)
+
+    y_val_string, pred = montarConfusionMatrix10Folds(model9, X_val1, y_val1)
+
+    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+    predGlobal = pd.concat([predGlobal, pred])
+
+    confusion_matrix = metrics.confusion_matrix(y_true=y_val_stringGlobal, y_pred=predGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
+
+    import seaborn as sn
+    import matplotlib.pyplot as plt
+
+    df_cm = pd.DataFrame(confusion_matrix, index=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'] , columns=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
+    sn.set(font_scale=1.4) # for label size
+    sn.heatmap(df_cm/np.sum(df_cm), annot=True, annot_kws={"size": 12}, cmap='Blues') # font size
+
+    plt.show()
+
 #---------------------------
 #- Começa aqui o algoritmo -
+#---------------------------
 
 # PlotarGraficoTodosKfolds()
+# montarMatriz()
 
-# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds2.tf')
+
+# inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,607)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,97)
 #
-# PredizerImagem(inceptionv3,X_train1, X_val1, y_train1, y_val1)
+# PredizerImagem(inceptionv3,X_val1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
 # PlotarGrafico(1)
 
