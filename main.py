@@ -3,7 +3,9 @@ import warnings
 
 from nets.nn import Sequential
 from keras.applications.resnet50 import ResNet50
+from tensorflow.python.keras.applications.densenet import DenseNet121
 from tensorflow.python.keras.applications.xception import Xception
+from tensorflow.keras import layers
 
 warnings.filterwarnings('always')
 warnings.filterwarnings('ignore')
@@ -212,7 +214,7 @@ def evaluate_modelResNetNova(trainGenerator, valGenerator):
 
 def evaluate_modelXception(trainGenerator, valGenerator):
 
-    print("Criando ResNet")
+    print("Criando Xception")
 
     xCeption = Xception(input_shape=(224,224,3), weights='imagenet', include_top=False)
 
@@ -236,6 +238,38 @@ def evaluate_modelXception(trainGenerator, valGenerator):
     model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
 
     return model, val_acc, history
+
+# -------------------
+# - Cria a DenseNet -
+# -------------------
+
+def evaluate_modelDenseNet(trainGenerator, valGenerator):
+
+    print("Criando DenseNet")
+
+    densenet = DenseNet121(weights='imagenet', include_top=False, input_shape=(224,224,3))
+
+    for layer in densenet.layers:
+        layer.trainable = False
+
+    model = Sequential()
+    model.add(densenet)
+    model.add(layers.GlobalAveragePooling2D())
+    model.add(layers.Dense(3078, activation='relu'))
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dropout(0.2))
+    model.add(layers.Dense(7, activation='softmax'))
+    model.summary()
+
+    model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',  # categorical_crossentropy if multi-class classifier
+                  metrics=['accuracy'])
+
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
+
+    return model, val_acc, history
+
 
 # --------------------
 # - Cria a GoogleNet -
@@ -714,7 +748,7 @@ def montarMatriz():
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,97)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,439)
 #
 # PredizerImagem(inceptionv3,X_val1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
@@ -748,7 +782,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
     # evaluate model
-    model, test_acc, history = evaluate_modelXception(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelDenseNet(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
