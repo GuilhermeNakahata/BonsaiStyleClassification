@@ -281,13 +281,13 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator):
 
     googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
-    x = GlobalAveragePooling2D(name='avg_pool_2D')(x)
+    x = Flatten(name='avg_pool_2D')(x)
     # x = Dense(128, activation='relu')(x)
     # x = Dropout(0.4)(x)
-    x = Dense(512,activation='relu')(x)
-    x = Dropout(0.5)(x)
+    # x = Dense(512,activation='relu')(x)
+    # x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
-    x = Dropout(0.3)(x)
+    x = Dropout(0.1)(x)
     predictions = Dense(7,activation='softmax')(x)
     model = Model(inputs=googlenet_base.input, outputs=predictions)
 
@@ -604,7 +604,7 @@ def montarMatriz():
     print("Modelo número 1 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,97)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,773)
 
     y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val1, y_val1)
 
@@ -614,7 +614,7 @@ def montarMatriz():
     print("Modelo número 2 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,794)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,893)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model1, X_val1, y_val1)
 
@@ -627,7 +627,7 @@ def montarMatriz():
     print("Modelo número 3 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,427)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,397)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model2, X_val1, y_val1)
 
@@ -640,7 +640,7 @@ def montarMatriz():
     print("Modelo número 4 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,298)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,527)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model3, X_val1, y_val1)
 
@@ -653,7 +653,7 @@ def montarMatriz():
     print("Modelo número 5 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,339)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,492)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model4, X_val1, y_val1)
 
@@ -666,7 +666,7 @@ def montarMatriz():
     print("Modelo número 6 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,748)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,500)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model5, X_val1, y_val1)
 
@@ -679,7 +679,7 @@ def montarMatriz():
     print("Modelo número 7 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,987)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,216)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model6, X_val1, y_val1)
 
@@ -692,7 +692,7 @@ def montarMatriz():
     print("Modelo número 8 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,151)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,870)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model7, X_val1, y_val1)
 
@@ -705,7 +705,7 @@ def montarMatriz():
     print("Modelo número 9 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,516)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,636)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model8, X_val1, y_val1)
 
@@ -718,7 +718,7 @@ def montarMatriz():
     print("Modelo número 10 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,757)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,341)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model9, X_val1, y_val1)
 
@@ -732,7 +732,7 @@ def montarMatriz():
 
     df_cm = pd.DataFrame(confusion_matrix, index=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'] , columns=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
     sn.set(font_scale=1.4) # for label size
-    sn.heatmap(df_cm/np.sum(df_cm), annot=True, annot_kws={"size": 12}, cmap='Blues') # font size
+    sn.heatmap(df_cm/np.sum(df_cm), annot=True, annot_kws={"size": 12}) # font size
 
     plt.show()
 
@@ -741,25 +741,26 @@ def montarMatriz():
 #---------------------------
 
 # PlotarGraficoTodosKfolds()
-# montarMatriz()
+montarMatriz()
 
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
 #
 # X1,y1 = AbreDataSet()
-# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,439)
+# X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,421)
 #
 # PredizerImagem(inceptionv3,X_val1, y_val1)
 # VerificarPrecisao(inceptionv3,X_val1,y_val1)
 # PlotarGrafico(1)
 
 train_datagen = ImageDataGenerator(
+    rescale=1./255,
     zoom_range=0.1,  # Aleatory zoom
     width_shift_range=0.1,  # horizontal shift
     height_shift_range=0.1,  # vertical shift
     horizontal_flip=True,
-    vertical_flip=True,
+    brightness_range=[0.2,1.0],
     shear_range=0.1)
 
 val_datagen = ImageDataGenerator()
@@ -779,10 +780,10 @@ for index in range(n_folds):
     print(r_state)
     print("Random State Salvo com sucesso!")
     X_train, X_val, y_train, y_val = ReparteDataSet(X,y,r_state)
-    train_generator = train_datagen.flow(X_train, y_train, batch_size=30)
-    val_genarator = val_datagen.flow(X_val, y_val, batch_size=30)
+    train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
+    val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
     # evaluate model
-    model, test_acc, history = evaluate_modelDenseNet(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
