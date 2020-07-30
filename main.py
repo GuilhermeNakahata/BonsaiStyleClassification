@@ -6,6 +6,7 @@ from keras.applications.resnet50 import ResNet50
 from tensorflow.python.keras.applications.densenet import DenseNet121
 from tensorflow.python.keras.applications.xception import Xception
 from tensorflow.keras import layers
+from tensorflow.python.keras.callbacks import ModelCheckpoint
 
 warnings.filterwarnings('always')
 warnings.filterwarnings('ignore')
@@ -37,7 +38,7 @@ import sklearn.metrics as metrics
 # - Cria a VGG16 -
 # ----------------
 
-def evaluate_modelVGG16(trainGenerator, valGenerator):
+def evaluate_modelVGG16(trainGenerator, valGenerator, indexEpochs):
 
     print("Criando VGG16")
 
@@ -57,7 +58,7 @@ def evaluate_modelVGG16(trainGenerator, valGenerator):
 
     tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model, indexEpochs)
 
     return model, val_acc, history
 
@@ -65,7 +66,7 @@ def evaluate_modelVGG16(trainGenerator, valGenerator):
 # - Continua a VGG16 -
 # --------------------
 
-def ContinuaVGG16(trainGenerator, valGenerator):
+def ContinuaVGG16(trainGenerator, valGenerator, indexEpochs):
 
     print("Continua VGG16")
 
@@ -79,9 +80,9 @@ def ContinuaVGG16(trainGenerator, valGenerator):
         if layer.name in ['dense', 'dropout', 'dense_1', 'dropout_1', 'dense_2']:
             layer.trainable = True
 
-    VGG16Treinada.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+    VGG16Treinada.compile(optimizer = Nadam(0.0001), loss = 'categorical_crossentropy', metrics=["accuracy"])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, VGG16Treinada)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, VGG16Treinada, indexEpochs)
 
     return model, val_acc, history
 
@@ -89,7 +90,7 @@ def ContinuaVGG16(trainGenerator, valGenerator):
 # - Cria a ResNet -
 # -----------------
 
-def evaluate_modelResNet(trainGenerator, valGenerator):
+def evaluate_modelResNet(trainGenerator, valGenerator, indexEpochs):
 
     print("Criando ResNet")
 
@@ -139,7 +140,7 @@ def evaluate_modelResNet(trainGenerator, valGenerator):
 
     model_finetuned.summary()
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model_finetuned)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model_finetuned, indexEpochs)
 
     return model, val_acc, history
 
@@ -147,7 +148,7 @@ def evaluate_modelResNet(trainGenerator, valGenerator):
 # - Continua a ResNet -
 # ---------------------
 
-def ContinuaResnet(trainGenerator, valGenerator):
+def ContinuaResnet(trainGenerator, valGenerator, indexEpochs):
 
     print("Continua ResNet")
 
@@ -168,7 +169,7 @@ def ContinuaResnet(trainGenerator, valGenerator):
     resnetRetreino.compile(loss='categorical_crossentropy',optimizer=optimizers.RMSprop(lr=1e-5),metrics=['accuracy'])
 
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, resnetRetreino)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, resnetRetreino, indexEpochs)
 
     return model, val_acc, history
 
@@ -176,7 +177,7 @@ def ContinuaResnet(trainGenerator, valGenerator):
 # - Cria a ResNetNova -
 # ---------------------
 
-def evaluate_modelResNetNova(trainGenerator, valGenerator):
+def evaluate_modelResNetNova(trainGenerator, valGenerator, indexEpochs):
 
     print("Criando ResNet")
 
@@ -192,18 +193,18 @@ def evaluate_modelResNetNova(trainGenerator, valGenerator):
 
     x = restnet.output
     x = Flatten()(x)
-    x = Dense(3078,activation='relu')(x)
-    x = Dropout(0.5)(x)
+    # x = Dense(3078,activation='relu')(x)
+    # x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(0.1)(x)
     out = Dense(7,activation='softmax')(x)
     tf_model=Model(inputs=restnet.input,outputs=out)
 
     tf_model.compile(loss='categorical_crossentropy',
-                  optimizer=optimizers.RMSprop(lr=2e-5),
+                  optimizer=Nadam(0.0001),
                   metrics=['accuracy'])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model, indexEpochs)
 
     return model, val_acc, history
 
@@ -212,7 +213,7 @@ def evaluate_modelResNetNova(trainGenerator, valGenerator):
 # - Cria a Xception -
 # -------------------
 
-def evaluate_modelXception(trainGenerator, valGenerator):
+def evaluate_modelXception(trainGenerator, valGenerator, indexEpochs):
 
     print("Criando Xception")
 
@@ -222,20 +223,20 @@ def evaluate_modelXception(trainGenerator, valGenerator):
         layer.trainable = False
 
     x = xCeption.output
-    x = GlobalAveragePooling2D()(x)
-    x = Dense(3078,activation='relu')(x)
-    x = Dropout(0.5)(x)
+    x = Flatten(name='avg_pool_2D')(x)
+    # x = Dense(3078,activation='relu')(x)
+    # x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(0.1)(x)
     predictions = Dense(7, activation='softmax')(x)
 
     model = Model(xCeption.input, predictions)
 
-    model.compile(optimizer='nadam',
+    model.compile(optimizer=Nadam(0.0001),
                   loss='categorical_crossentropy',  # categorical_crossentropy if multi-class classifier
                   metrics=['accuracy'])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model, indexEpochs)
 
     return model, val_acc, history
 
@@ -243,7 +244,7 @@ def evaluate_modelXception(trainGenerator, valGenerator):
 # - Cria a DenseNet -
 # -------------------
 
-def evaluate_modelDenseNet(trainGenerator, valGenerator):
+def evaluate_modelDenseNet(trainGenerator, valGenerator, indexEpochs):
 
     print("Criando DenseNet")
 
@@ -254,19 +255,19 @@ def evaluate_modelDenseNet(trainGenerator, valGenerator):
 
     model = Sequential()
     model.add(densenet)
-    model.add(layers.GlobalAveragePooling2D())
-    model.add(layers.Dense(3078, activation='relu'))
-    model.add(layers.Dropout(0.5))
+    model.add(layers.Flatten())
+    # model.add(layers.Dense(3078, activation='relu'))
+    # model.add(layers.Dropout(0.5))
     model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dropout(0.2))
+    model.add(layers.Dropout(0.1))
     model.add(layers.Dense(7, activation='softmax'))
     model.summary()
 
-    model.compile(optimizer='adam',
+    model.compile(optimizer= Nadam(0.0001),
                   loss='categorical_crossentropy',  # categorical_crossentropy if multi-class classifier
                   metrics=['accuracy'])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model, indexEpochs)
 
     return model, val_acc, history
 
@@ -275,7 +276,7 @@ def evaluate_modelDenseNet(trainGenerator, valGenerator):
 # - Cria a GoogleNet -
 # --------------------
 
-def evaluate_modelGoogleNet(trainGenerator, valGenerator):
+def evaluate_modelGoogleNet(trainGenerator, valGenerator, indexEpochs):
 
     print("Criando GoogleNet")
 
@@ -294,6 +295,8 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator):
     for layer in googlenet_base.layers:
         layer.trainable = False
 
+    # model.load_weights("best_model.hdf5")
+
     model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
 
     # model.compile(loss='categorical_crossentropy',
@@ -305,7 +308,7 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator):
     #               optimizer=optimizers.RMSprop(lr=2e-5),
     #               metrics=['accuracy'])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model, indexEpochs)
 
     return model, val_acc, history
 
@@ -314,7 +317,7 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator):
 # - Continua a GoogleNet -
 # ------------------------
 
-def ContinuaGoogleNet(trainGenerator, valGenerator):
+def ContinuaGoogleNet(trainGenerator, valGenerator, indexEpochs):
 
     print("Continua ResNet")
 
@@ -325,7 +328,7 @@ def ContinuaGoogleNet(trainGenerator, valGenerator):
 
     googleNet.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, googleNet)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, googleNet, indexEpochs)
 
     return model, val_acc, history
 
@@ -334,14 +337,20 @@ def ContinuaGoogleNet(trainGenerator, valGenerator):
 # - Treina o modelo -
 # -------------------
 
-def TreinarModelo(trainGenerator, valGenerator, modelToTrain):
+def TreinarModelo(trainGenerator, valGenerator, modelToTrain, indexEpochs):
 
     print("Inicio Treinamento")
+
+    bestepoch = "best_model" + str(indexEpochs) + ".hdf5"
+
+    checkpoint = ModelCheckpoint(bestepoch, monitor='val_accuracy', verbose=1,
+                                 save_best_only=True, mode='auto', period=1)
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
                         epochs=100,
-                        verbose=1)
+                        verbose=1,
+                        callbacks=[checkpoint])
 
     _, val_acc = modelToTrain.evaluate(X_val, y_val, verbose=1)
 
@@ -741,7 +750,7 @@ def montarMatriz():
 #---------------------------
 
 # PlotarGraficoTodosKfolds()
-montarMatriz()
+# montarMatriz()
 
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
@@ -783,7 +792,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
     # evaluate model
-    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator)
+    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator, indexEpochs)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
