@@ -132,8 +132,8 @@ def evaluate_modelResNet(trainGenerator, valGenerator, indexEpochs):
     model_finetuned.add(restnet)
     model_finetuned.add(Dense(256, activation='relu', input_dim=(224,244,3)))
     model_finetuned.add(Dropout(0.4))
-    model_finetuned.add(Dense(128, activation='relu'))
-    model_finetuned.add(Dropout(0.3))
+    model_finetuned.add(Dense(256, activation='relu'))
+    model_finetuned.add(Dropout(0.1))
     model_finetuned.add(Dense(7, activation='softmax'))
     model_finetuned.compile(loss='categorical_crossentropy',optimizer=optimizers.RMSprop(lr=1e-5),metrics=['accuracy'])
 
@@ -183,7 +183,6 @@ def evaluate_modelResNetNova(trainGenerator, valGenerator, indexEpochs):
     restnet = ResNet50(include_top=False, weights='imagenet', input_shape=(224,224,3))
 
     output = restnet.layers[-1].output
-    output = keras.layers.Flatten()(output)
 
     restnet = Model(restnet.input, output)
 
@@ -192,8 +191,8 @@ def evaluate_modelResNetNova(trainGenerator, valGenerator, indexEpochs):
 
     x = restnet.output
     x = Flatten()(x)
-    # x = Dense(3078,activation='relu')(x)
-    # x = Dropout(0.5)(x)
+    x = Dense(3078,activation='relu')(x)
+    x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
     x = Dropout(0.1)(x)
     out = Dense(7,activation='softmax')(x)
@@ -607,12 +606,24 @@ def PlotarGraficoTodosKfolds():
 def montarMatriz():
     model = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
     model.load_weights('best_model1.hdf5')
+
+    validacaoAccuracy = []
+
     print("Modelo número 1 carregado!")
 
     X1,y1 = AbreDataSet()
     X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,556)
 
     y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val1, y_val1)
+
+    loss1, accuracy1 = model.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 1 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
 
     #----------------------------
 
@@ -628,6 +639,15 @@ def montarMatriz():
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
 
+    loss1, accuracy1 = model1.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 2 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
+
     #----------------------------
 
     model2 = keras.models.load_model('GoogleNet10EpochsK-Folds3.tf')
@@ -641,6 +661,15 @@ def montarMatriz():
 
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
+
+    loss1, accuracy1 = model2.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 3 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
 
     #----------------------------
 
@@ -656,6 +685,15 @@ def montarMatriz():
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
 
+    loss1, accuracy1 = model3.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 4 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
+
     # ----------------------------
 
     model4 = keras.models.load_model('GoogleNet10EpochsK-Folds5.tf')
@@ -669,6 +707,15 @@ def montarMatriz():
 
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
+
+    loss1, accuracy1 = model4.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 5 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
 
     #----------------------------
 
@@ -684,6 +731,15 @@ def montarMatriz():
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
 
+    loss1, accuracy1 = model5.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 6 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
+
     #----------------------------
 
     model6 = keras.models.load_model('GoogleNet10EpochsK-Folds7.tf')
@@ -697,6 +753,15 @@ def montarMatriz():
 
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
+
+    loss1, accuracy1 = model6.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 7 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
 
     #----------------------------
 
@@ -712,6 +777,15 @@ def montarMatriz():
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
 
+    loss1, accuracy1 = model7.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 8 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
+
     #----------------------------
 
     model8 = keras.models.load_model('GoogleNet10EpochsK-Folds9.tf')
@@ -726,6 +800,15 @@ def montarMatriz():
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
 
+    loss1, accuracy1 = model8.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 9 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
+
     #----------------------------
 
     model9 = keras.models.load_model('GoogleNet10EpochsK-Folds10.tf')
@@ -739,6 +822,17 @@ def montarMatriz():
 
     y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
     predGlobal = pd.concat([predGlobal, pred])
+
+    loss1, accuracy1 = model9.evaluate(X_val1, y_val1, steps = 20)
+
+    validacaoAccuracy.append(accuracy1)
+
+    print("-------- Precisão k-folds 10 ---------")
+    print("Initial loss: {:.2f}".format(loss1))
+    print("Initial accuracy: {:.2f}".format(accuracy1))
+    print("-------------------------------------")
+
+    print(validacaoAccuracy)
 
     confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
 
@@ -756,7 +850,7 @@ def montarMatriz():
 #---------------------------
 
 # PlotarGraficoTodosKfolds()
-montarMatriz()
+# montarMatriz()
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
@@ -799,7 +893,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
     # evaluate model
-    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator, indexEpochs)
+    model, test_acc, history = evaluate_modelResNetNova(train_generator, val_genarator, indexEpochs)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
