@@ -343,7 +343,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain, indexEpochs):
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
-                        epochs=100,
+                        epochs=20,
                         verbose=1,
                         callbacks=[checkpoint])
 
@@ -612,7 +612,7 @@ def montarMatriz():
     print("Modelo número 1 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,556)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,516)
 
     y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val1, y_val1)
 
@@ -632,7 +632,7 @@ def montarMatriz():
     print("Modelo número 2 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,144)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,152)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model1, X_val1, y_val1)
 
@@ -655,7 +655,7 @@ def montarMatriz():
     print("Modelo número 3 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,455)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,334)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model2, X_val1, y_val1)
 
@@ -678,7 +678,7 @@ def montarMatriz():
     print("Modelo número 4 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,101)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,991)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model3, X_val1, y_val1)
 
@@ -701,7 +701,7 @@ def montarMatriz():
     print("Modelo número 5 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,369)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,574)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model4, X_val1, y_val1)
 
@@ -724,7 +724,7 @@ def montarMatriz():
     print("Modelo número 6 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,235)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,30)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model5, X_val1, y_val1)
 
@@ -747,7 +747,7 @@ def montarMatriz():
     print("Modelo número 7 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,340)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,566)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model6, X_val1, y_val1)
 
@@ -770,7 +770,7 @@ def montarMatriz():
     print("Modelo número 8 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,473)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,350)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model7, X_val1, y_val1)
 
@@ -793,7 +793,7 @@ def montarMatriz():
     print("Modelo número 9 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,563)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,199)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model8, X_val1, y_val1)
 
@@ -816,7 +816,7 @@ def montarMatriz():
     print("Modelo número 10 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,582)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,526)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model9, X_val1, y_val1)
 
@@ -893,7 +893,7 @@ for index in range(n_folds):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
     # evaluate model
-    model, test_acc, history = evaluate_modelResNetNova(train_generator, val_genarator, indexEpochs)
+    model, test_acc, history = evaluate_modelDenseNet(train_generator, val_genarator, indexEpochs)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
