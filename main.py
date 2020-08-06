@@ -45,10 +45,10 @@ def evaluate_modelVGG16(trainGenerator, valGenerator, indexEpochs):
 
     x = VGG16.output
     x = Flatten()(x)
-    x = Dense(3078,activation='relu')(x)
-    x = Dropout(0.5)(x)
+    # x = Dense(3078,activation='relu')(x)
+    # x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(0.1)(x)
     out = Dense(7,activation='softmax')(x)
     tf_model=Model(inputs=VGG16.input,outputs=out)
 
@@ -343,7 +343,7 @@ def TreinarModelo(trainGenerator, valGenerator, modelToTrain, indexEpochs):
 
     history = modelToTrain.fit(trainGenerator,
                         validation_data=valGenerator,
-                        epochs=20,
+                        epochs=30,
                         verbose=1,
                         callbacks=[checkpoint])
 
@@ -612,7 +612,7 @@ def montarMatriz():
     print("Modelo número 1 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,516)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,768)
 
     y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val1, y_val1)
 
@@ -632,7 +632,7 @@ def montarMatriz():
     print("Modelo número 2 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,152)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,951)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model1, X_val1, y_val1)
 
@@ -655,7 +655,7 @@ def montarMatriz():
     print("Modelo número 3 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,334)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,427)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model2, X_val1, y_val1)
 
@@ -678,7 +678,7 @@ def montarMatriz():
     print("Modelo número 4 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,991)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,616)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model3, X_val1, y_val1)
 
@@ -701,7 +701,7 @@ def montarMatriz():
     print("Modelo número 5 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,574)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,649)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model4, X_val1, y_val1)
 
@@ -724,7 +724,7 @@ def montarMatriz():
     print("Modelo número 6 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,30)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,374)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model5, X_val1, y_val1)
 
@@ -747,7 +747,7 @@ def montarMatriz():
     print("Modelo número 7 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,566)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,432)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model6, X_val1, y_val1)
 
@@ -770,7 +770,7 @@ def montarMatriz():
     print("Modelo número 8 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,350)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,630)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model7, X_val1, y_val1)
 
@@ -793,7 +793,7 @@ def montarMatriz():
     print("Modelo número 9 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,199)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,873)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model8, X_val1, y_val1)
 
@@ -816,7 +816,7 @@ def montarMatriz():
     print("Modelo número 10 carregado!")
 
     X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,526)
+    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,229)
 
     y_val_string, pred = montarConfusionMatrix10Folds(model9, X_val1, y_val1)
 
@@ -879,21 +879,16 @@ n_folds = 10
 cv_scores = list()
 X,y = AbreDataSet()
 indexEpochs = 1
-for index in range(n_folds):
+divisionFolds = [768,951,427,616,649,374,432,630,873,229]
+for index in divisionFolds:
     print('-----------------------------------------------------------------')
     print('Epoca ' + str(indexEpochs))
     # split data
-    r_state = np.random.randint(1, 1000, 1)[0]
-    with open('RandomState', 'a') as file_pi:
-        file_pi.write('Epoca:' + str(indexEpochs) + ' Random State: ' + str(r_state) + '\n')
-        file_pi.close()
-    print(r_state)
-    print("Random State Salvo com sucesso!")
-    X_train, X_val, y_train, y_val = ReparteDataSet(X,y,r_state)
+    X_train, X_val, y_train, y_val = ReparteDataSet(X,y,index)
     train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
     # evaluate model
-    model, test_acc, history = evaluate_modelDenseNet(train_generator, val_genarator, indexEpochs)
+    model, test_acc, history = evaluate_modelVGG16(train_generator, val_genarator, indexEpochs)
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
