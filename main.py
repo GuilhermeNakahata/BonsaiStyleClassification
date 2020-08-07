@@ -1,5 +1,15 @@
 import pickle
 import warnings
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import keras
+import random
+import tensorflow as tf
+import cv2 as cv
+import os
+import glob
+import sklearn.metrics as metrics
 
 from nets.nn import Sequential
 from keras.applications.resnet50 import ResNet50
@@ -7,17 +17,6 @@ from tensorflow.python.keras.applications.densenet import DenseNet121
 from tensorflow.python.keras.applications.xception import Xception
 from tensorflow.keras import layers
 from tensorflow.python.keras.callbacks import ModelCheckpoint
-
-warnings.filterwarnings('always')
-warnings.filterwarnings('ignore')
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-from sklearn.model_selection import train_test_split, StratifiedKFold
-
-import keras
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Model
 from keras.optimizers import Nadam
@@ -25,13 +24,10 @@ from keras.utils import to_categorical
 from keras.layers import Dropout, Flatten, Dense
 from keras.models import Sequential
 from keras import optimizers
+from sklearn.model_selection import train_test_split, StratifiedKFold
 
-import random
-import tensorflow as tf
-import cv2 as cv
-import os
-import glob
-import sklearn.metrics as metrics
+warnings.filterwarnings('always')
+warnings.filterwarnings('ignore')
 
 # ----------------
 # - Cria a VGG16 -
@@ -56,30 +52,6 @@ def evaluate_modelVGG16(trainGenerator, valGenerator, indexEpochs):
     tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
 
     model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model, indexEpochs)
-
-    return model, val_acc, history
-
-# --------------------
-# - Continua a VGG16 -
-# --------------------
-
-def ContinuaVGG16(trainGenerator, valGenerator, indexEpochs):
-
-    print("Continua VGG16")
-
-    VGG16Treinada = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
-    print("Modelo carregado!")
-
-    for layer in VGG16Treinada.layers:
-        layer.trainable = False
-
-    for layer in VGG16Treinada.layers:
-        if layer.name in ['dense', 'dropout', 'dense_1', 'dropout_1', 'dense_2']:
-            layer.trainable = True
-
-    VGG16Treinada.compile(optimizer = Nadam(0.0001), loss = 'categorical_crossentropy', metrics=["accuracy"])
-
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, VGG16Treinada, indexEpochs)
 
     return model, val_acc, history
 
@@ -142,35 +114,6 @@ def evaluate_modelResNet(trainGenerator, valGenerator, indexEpochs):
     return model, val_acc, history
 
 # ---------------------
-# - Continua a ResNet -
-# ---------------------
-
-def ContinuaResnet(trainGenerator, valGenerator, indexEpochs):
-
-    print("Continua ResNet")
-
-    resnetRetreino = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
-    print("Modelo carregado!")
-
-    resnetRetreino.summary()
-
-    for layer in resnetRetreino.layers:
-        layer.trainable = False
-
-    for layer in resnetRetreino.layers:
-        if layer.name in ['dense', 'dropout', 'dense_1', 'dropout_1', 'dense_2']:
-            layer.trainable = True
-
-    resnetRetreino.summary()
-
-    resnetRetreino.compile(loss='categorical_crossentropy',optimizer=optimizers.RMSprop(lr=1e-5),metrics=['accuracy'])
-
-
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, resnetRetreino, indexEpochs)
-
-    return model, val_acc, history
-
-# ---------------------
 # - Cria a ResNetNova -
 # ---------------------
 
@@ -226,7 +169,7 @@ def evaluate_modelXception(trainGenerator, valGenerator, indexEpochs):
     model = Model(xCeption.input, predictions)
 
     model.compile(optimizer=Nadam(0.0001),
-                  loss='categorical_crossentropy',  # categorical_crossentropy if multi-class classifier
+                  loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
     model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model, indexEpochs)
@@ -255,13 +198,12 @@ def evaluate_modelDenseNet(trainGenerator, valGenerator, indexEpochs):
     model.summary()
 
     model.compile(optimizer= Nadam(0.0001),
-                  loss='categorical_crossentropy',  # categorical_crossentropy if multi-class classifier
+                  loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
     model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model, indexEpochs)
 
     return model, val_acc, history
-
 
 # --------------------
 # - Cria a GoogleNet -
@@ -282,39 +224,9 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator, indexEpochs):
     for layer in googlenet_base.layers:
         layer.trainable = False
 
-    # model.load_weights("best_model.hdf5")
-
     model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
 
-    # model.compile(loss='categorical_crossentropy',
-    #               optimizer=optimizers.SGD(lr=1e-4,
-    #                                        momentum=0.9),
-    #               metrics=['accuracy'])
-
-    # model.compile(loss='categorical_crossentropy',
-    #               optimizer=optimizers.RMSprop(lr=2e-5),
-    #               metrics=['accuracy'])
-
     model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model, indexEpochs)
-
-    return model, val_acc, history
-
-# ------------------------
-# - Continua a GoogleNet -
-# ------------------------
-
-def ContinuaGoogleNet(trainGenerator, valGenerator, indexEpochs):
-
-    print("Continua ResNet")
-
-    googleNet = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
-    print("Modelo carregado!")
-
-    googleNet.summary()
-
-    googleNet.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
-
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, googleNet, indexEpochs)
 
     return model, val_acc, history
 
@@ -594,32 +506,52 @@ def PlotarGraficoTodosKfolds():
 #----------------------------
 
 def montarMatriz():
-    model = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
-    model.load_weights('best_model1.hdf5')
 
     validacaoAccuracy = []
 
     X,y = AbreDataSet()
 
+    modelos = ["GoogleNet10EpochsK-Folds1.tf","GoogleNet10EpochsK-Folds2.tf","GoogleNet10EpochsK-Folds3.tf",
+               "GoogleNet10EpochsK-Folds4.tf","GoogleNet10EpochsK-Folds5.tf","GoogleNet10EpochsK-Folds6.tf",
+               "GoogleNet10EpochsK-Folds7.tf","GoogleNet10EpochsK-Folds8.tf","GoogleNet10EpochsK-Folds9.tf",
+               "GoogleNet10EpochsK-Folds10.tf"]
+
+    pesosmodelos = ["best_model1.hdf5","best_model2.hdf5","best_model3.hdf5",
+                    "best_model4.hdf5","best_model5.hdf5","best_model6.hdf5",
+                    "best_model7.hdf5","best_model8.hdf5","best_model9.hdf5",
+                    "best_model10.hdf5"]
+
+    indexEpoch = 0
+
+    kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=0)
+    kf.get_n_splits(X)
+
     for train_index, test_index in kf.split(X,y.argmax(1)):
+        print("-------- Precisão fold-" + str(indexEpoch+1) + " ---------")
+        print("Carregando o peso: " + pesosmodelos[indexEpoch])
+        print("Carregando o modelo: " + modelos[indexEpoch])
+        model = keras.models.load_model(modelos[indexEpoch])
+        model.load_weights(pesosmodelos[indexEpoch])
         indexEpoch = indexEpoch + 1
-        print('-----------------------------------------------------------------')
-        print('Fold ' + str(indexEpoch))
 
         X_train, X_val = X[train_index], X[test_index]
         y_train, y_val = y[train_index], y[test_index]
 
         y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val, y_val)
 
+        y_val_string, pred = montarConfusionMatrix10Folds(model, X_val, y_val)
+
+        y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
+        predGlobal = pd.concat([predGlobal, pred])
+
         loss1, accuracy1 = model.evaluate(X_val, y_val, steps = 20)
 
         validacaoAccuracy.append(accuracy1)
 
-        print("-------- Precisão k-folds 1 ---------")
         print("Initial loss: {:.2f}".format(loss1))
         print("Initial accuracy: {:.2f}".format(accuracy1))
-        print("-------------------------------------")
 
+    print(validacaoAccuracy)
 
     confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
 
@@ -636,8 +568,8 @@ def montarMatriz():
 #- Começa aqui o algoritmo -
 #---------------------------
 
-PlotarGraficoTodosKfolds()
-montarMatriz()
+# PlotarGraficoTodosKfolds()
+# montarMatriz()
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
@@ -669,8 +601,6 @@ X,y = AbreDataSet()
 kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=0)
 kf.get_n_splits(X)
 
-print(kf)
-
 indexEpoch = 0
 for train_index, test_index in kf.split(X,y.argmax(1)):
     indexEpoch = indexEpoch + 1
@@ -682,8 +612,8 @@ for train_index, test_index in kf.split(X,y.argmax(1)):
 
     train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
-    # evaluate model
-    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator, indexEpoch)
+
+    model, test_acc, history = evaluate_modelXception(train_generator, val_genarator, indexEpoch)
 
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
