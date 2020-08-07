@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
 
 import keras
 from keras.preprocessing.image import ImageDataGenerator
@@ -45,8 +45,6 @@ def evaluate_modelVGG16(trainGenerator, valGenerator, indexEpochs):
 
     x = VGG16.output
     x = Flatten()(x)
-    # x = Dense(3078,activation='relu')(x)
-    # x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
     x = Dropout(0.1)(x)
     out = Dense(7,activation='softmax')(x)
@@ -221,8 +219,6 @@ def evaluate_modelXception(trainGenerator, valGenerator, indexEpochs):
 
     x = xCeption.output
     x = Flatten(name='avg_pool_2D')(x)
-    # x = Dense(3078,activation='relu')(x)
-    # x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
     x = Dropout(0.1)(x)
     predictions = Dense(7, activation='softmax')(x)
@@ -253,8 +249,6 @@ def evaluate_modelDenseNet(trainGenerator, valGenerator, indexEpochs):
     model = Sequential()
     model.add(densenet)
     model.add(layers.Flatten())
-    # model.add(layers.Dense(3078, activation='relu'))
-    # model.add(layers.Dropout(0.5))
     model.add(layers.Dense(256, activation='relu'))
     model.add(layers.Dropout(0.1))
     model.add(layers.Dense(7, activation='softmax'))
@@ -280,10 +274,6 @@ def evaluate_modelGoogleNet(trainGenerator, valGenerator, indexEpochs):
     googlenet_base = tf.keras.applications.InceptionV3(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
     x = googlenet_base.output
     x = Flatten(name='avg_pool_2D')(x)
-    # x = Dense(128, activation='relu')(x)
-    # x = Dropout(0.4)(x)
-    # x = Dense(512,activation='relu')(x)
-    # x = Dropout(0.5)(x)
     x = Dense(256,activation='relu')(x)
     x = Dropout(0.1)(x)
     predictions = Dense(7,activation='softmax')(x)
@@ -609,230 +599,27 @@ def montarMatriz():
 
     validacaoAccuracy = []
 
-    print("Modelo número 1 carregado!")
+    X,y = AbreDataSet()
 
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,768)
+    for train_index, test_index in kf.split(X,y.argmax(1)):
+        indexEpoch = indexEpoch + 1
+        print('-----------------------------------------------------------------')
+        print('Fold ' + str(indexEpoch))
 
-    y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val1, y_val1)
+        X_train, X_val = X[train_index], X[test_index]
+        y_train, y_val = y[train_index], y[test_index]
 
-    loss1, accuracy1 = model.evaluate(X_val1, y_val1, steps = 20)
+        y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val, y_val)
 
-    validacaoAccuracy.append(accuracy1)
+        loss1, accuracy1 = model.evaluate(X_val, y_val, steps = 20)
 
-    print("-------- Precisão k-folds 1 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
+        validacaoAccuracy.append(accuracy1)
 
-    #----------------------------
+        print("-------- Precisão k-folds 1 ---------")
+        print("Initial loss: {:.2f}".format(loss1))
+        print("Initial accuracy: {:.2f}".format(accuracy1))
+        print("-------------------------------------")
 
-    model1 = keras.models.load_model('GoogleNet10EpochsK-Folds2.tf')
-    model1.load_weights('best_model2.hdf5')
-    print("Modelo número 2 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,951)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model1, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model1.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 2 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    #----------------------------
-
-    model2 = keras.models.load_model('GoogleNet10EpochsK-Folds3.tf')
-    model2.load_weights('best_model3.hdf5')
-    print("Modelo número 3 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,427)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model2, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model2.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 3 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    #----------------------------
-
-    model3 = keras.models.load_model('GoogleNet10EpochsK-Folds4.tf')
-    model3.load_weights('best_model4.hdf5')
-    print("Modelo número 4 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,616)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model3, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model3.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 4 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    # ----------------------------
-
-    model4 = keras.models.load_model('GoogleNet10EpochsK-Folds5.tf')
-    model4.load_weights('best_model5.hdf5')
-    print("Modelo número 5 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,649)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model4, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model4.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 5 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    #----------------------------
-
-    model5 = keras.models.load_model('GoogleNet10EpochsK-Folds6.tf')
-    model5.load_weights('best_model6.hdf5')
-    print("Modelo número 6 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,374)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model5, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model5.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 6 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    #----------------------------
-
-    model6 = keras.models.load_model('GoogleNet10EpochsK-Folds7.tf')
-    model6.load_weights('best_model7.hdf5')
-    print("Modelo número 7 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,432)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model6, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model6.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 7 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    #----------------------------
-
-    model7 = keras.models.load_model('GoogleNet10EpochsK-Folds8.tf')
-    model7.load_weights('best_model8.hdf5')
-    print("Modelo número 8 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,630)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model7, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model7.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 8 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    #----------------------------
-
-    model8 = keras.models.load_model('GoogleNet10EpochsK-Folds9.tf')
-    model8.load_weights('best_model9.hdf5')
-    print("Modelo número 9 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,873)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model8, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model8.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 9 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    #----------------------------
-
-    model9 = keras.models.load_model('GoogleNet10EpochsK-Folds10.tf')
-    model9.load_weights('best_model10.hdf5')
-    print("Modelo número 10 carregado!")
-
-    X1,y1 = AbreDataSet()
-    X_train1, X_val1, y_train1, y_val1 = ReparteDataSet(X1,y1,229)
-
-    y_val_string, pred = montarConfusionMatrix10Folds(model9, X_val1, y_val1)
-
-    y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
-    predGlobal = pd.concat([predGlobal, pred])
-
-    loss1, accuracy1 = model9.evaluate(X_val1, y_val1, steps = 20)
-
-    validacaoAccuracy.append(accuracy1)
-
-    print("-------- Precisão k-folds 10 ---------")
-    print("Initial loss: {:.2f}".format(loss1))
-    print("Initial accuracy: {:.2f}".format(accuracy1))
-    print("-------------------------------------")
-
-    print(validacaoAccuracy)
 
     confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
 
@@ -849,8 +636,8 @@ def montarMatriz():
 #- Começa aqui o algoritmo -
 #---------------------------
 
-# PlotarGraficoTodosKfolds()
-# montarMatriz()
+PlotarGraficoTodosKfolds()
+montarMatriz()
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
@@ -878,32 +665,39 @@ val_datagen = ImageDataGenerator()
 n_folds = 10
 cv_scores = list()
 X,y = AbreDataSet()
-indexEpochs = 1
-divisionFolds = [768,951,427,616,649,374,432,630,873,229]
-for index in divisionFolds:
+
+kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=0)
+kf.get_n_splits(X)
+
+print(kf)
+
+indexEpoch = 0
+for train_index, test_index in kf.split(X,y.argmax(1)):
+    indexEpoch = indexEpoch + 1
     print('-----------------------------------------------------------------')
-    print('Epoca ' + str(indexEpochs))
-    # split data
-    X_train, X_val, y_train, y_val = ReparteDataSet(X,y,index)
+    print('Fold ' + str(indexEpoch))
+
+    X_train, X_val = X[train_index], X[test_index]
+    y_train, y_val = y[train_index], y[test_index]
+
     train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
     # evaluate model
-    model, test_acc, history = evaluate_modelVGG16(train_generator, val_genarator, indexEpochs)
+    model, test_acc, history = evaluate_modelGoogleNet(train_generator, val_genarator, indexEpoch)
+
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
 
     Variavel = "GoogleNet10EpochsK-Folds"
     Final = ".tf"
-    VariavelFinal = Variavel + str(indexEpochs) + Final
+    VariavelFinal = Variavel + str(indexEpoch) + Final
 
     model.save(VariavelFinal)
     print("Modelo salvo com sucesso!")
 
-    with open('trainHistory' + str(indexEpochs), 'wb') as file_pi:
+    with open('trainHistory' + str(indexEpoch), 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
     print("Histórico de treino salvo com sucesso!")
-
-    indexEpochs = indexEpochs + 1
 
     print('-----------------------------------------------------------------')
 
