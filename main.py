@@ -37,7 +37,7 @@ def evaluate_modelVGG16(trainGenerator, valGenerator, indexEpochs):
 
     print("Criando VGG16")
 
-    VGG16 = keras.applications.VGG16(include_top = False, weights= 'imagenet', input_shape=(224,224,3))
+    VGG16 = tf.keras.applications.VGG16(include_top = False, weights= 'imagenet', input_shape=(224,224,3))
 
     x = VGG16.output
     x = Flatten()(x)
@@ -613,7 +613,7 @@ for train_index, test_index in kf.split(X,y.argmax(1)):
     train_generator = train_datagen.flow(X_train, y_train, batch_size=20)
     val_genarator = val_datagen.flow(X_val, y_val, batch_size=20)
 
-    model, test_acc, history = evaluate_modelXception(train_generator, val_genarator, indexEpoch)
+    model, test_acc, history = evaluate_modelVGG16(train_generator, val_genarator, indexEpoch)
 
     print('>%.3f' % test_acc)
     cv_scores.append(test_acc)
