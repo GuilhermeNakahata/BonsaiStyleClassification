@@ -17,13 +17,13 @@ from tensorflow.python.keras.applications.densenet import DenseNet121
 from tensorflow.python.keras.applications.xception import Xception
 from tensorflow.keras import layers
 from tensorflow.python.keras.callbacks import ModelCheckpoint
-from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Model
-from keras.optimizers import Nadam
-from keras.utils import to_categorical
-from keras.layers import Dropout, Flatten, Dense
-from keras.models import Sequential
-from keras import optimizers
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Nadam
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import Dropout, Flatten, Dense
+from tensorflow.keras.models import Sequential
+from tensorflow.keras import optimizers
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
 warnings.filterwarnings('always')
