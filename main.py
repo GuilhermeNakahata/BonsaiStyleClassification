@@ -551,9 +551,23 @@ def montarMatriz():
         print("Initial loss: {:.2f}".format(loss1))
         print("Initial accuracy: {:.2f}".format(accuracy1))
 
+
     print(validacaoAccuracy)
 
     confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
+
+    # accuracy: (tp + tn) / (p + n)
+    accuracy = metrics.accuracy_score(predGlobal, y_val_stringGlobal)
+    print('Accuracy: %f' % accuracy)
+    # precision tp / (tp + fp)
+    precision = metrics.precision_score(predGlobal, y_val_stringGlobal, average='macro')
+    print('Precision: %f' % precision)
+    # recall: tp / (tp + fn)
+    recall = metrics.recall_score(predGlobal, y_val_stringGlobal, average='macro')
+    print('Recall: %f' % recall)
+    # f1: 2 tp / (2 tp + fp + fn)
+    f1 = metrics.f1_score(predGlobal, y_val_stringGlobal, average='macro')
+    print('F1 score: %f' % f1)
 
     import seaborn as sn
     import matplotlib.pyplot as plt
@@ -569,7 +583,7 @@ def montarMatriz():
 #---------------------------
 
 # PlotarGraficoTodosKfolds()
-# montarMatriz()
+montarMatriz()
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
