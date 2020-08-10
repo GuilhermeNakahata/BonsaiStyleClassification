@@ -10,7 +10,9 @@ import cv2 as cv
 import os
 import glob
 import sklearn.metrics as metrics
+import seaborn as sn
 
+from sklearn.metrics import precision_recall_fscore_support as score
 from nets.nn import Sequential
 from keras.applications.resnet50 import ResNet50
 from tensorflow.python.keras.applications.densenet import DenseNet121
@@ -526,6 +528,9 @@ def montarMatriz():
     kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=0)
     kf.get_n_splits(X)
 
+    y_val_stringGlobal = pd.DataFrame()
+    predGlobal = pd.DataFrame()
+
     for train_index, test_index in kf.split(X,y.argmax(1)):
         print("-------- Precisão fold-" + str(indexEpoch+1) + " ---------")
         print("Carregando o peso: " + pesosmodelos[indexEpoch])
@@ -552,7 +557,7 @@ def montarMatriz():
         X_train, X_val = X[train_index], X[test_index]
         y_train, y_val = y[train_index], y[test_index]
 
-        y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val, y_val)
+        # y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val, y_val)
 
         y_val_string, pred = montarConfusionMatrix10Folds(model, X_val, y_val)
 
@@ -566,32 +571,16 @@ def montarMatriz():
         print("Initial loss: {:.2f}".format(loss1))
         print("Initial accuracy: {:.2f}".format(accuracy1))
 
+
     print(validacaoAccuracy)
 
     confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
 
-    from sklearn.metrics import precision_recall_fscore_support as score
     precision, recall, fscore, support = score(predGlobal, y_val_stringGlobal)
     Style = ['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan']
     objPerClass = {'Style': Style, 'Precision': precision, 'Recall': recall, 'Fscore': fscore, 'Support': support}
     dataframePerClass = pd.DataFrame(data=objPerClass)
     print(dataframePerClass)
-
-    # # accuracy: (tp + tn) / (p + n)
-    # accuracy = metrics.accuracy_score(predGlobal, y_val_stringGlobal)
-    # print('Accuracy: %f' % accuracy)
-    # # precision tp / (tp + fp)
-    # precision = metrics.precision_score(predGlobal, y_val_stringGlobal, average='macro')
-    # print('Precision: %f' % precision)
-    # # recall: tp / (tp + fn)
-    # recall = metrics.recall_score(predGlobal, y_val_stringGlobal, average='macro')
-    # print('Recall: %f' % recall)
-    # # f1: 2 tp / (2 tp + fp + fn)
-    # f1 = metrics.f1_score(predGlobal, y_val_stringGlobal, average='macro')
-    # print('F1 score: %f' % f1)
-
-    import seaborn as sn
-    import matplotlib.pyplot as plt
 
     df_cm = pd.DataFrame(confusion_matrix, index=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'] , columns=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
     sn.set(font_scale=1.4) # for label size
@@ -604,7 +593,7 @@ def montarMatriz():
 #---------------------------
 
 # PlotarGraficoTodosKfolds()
-montarMatriz()
+# montarMatriz()
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
