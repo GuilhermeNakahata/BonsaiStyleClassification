@@ -530,7 +530,22 @@ def montarMatriz():
         print("-------- Precisão fold-" + str(indexEpoch+1) + " ---------")
         print("Carregando o peso: " + pesosmodelos[indexEpoch])
         print("Carregando o modelo: " + modelos[indexEpoch])
-        model = keras.models.load_model(modelos[indexEpoch])
+
+        VGG16 = tf.keras.applications.VGG16(include_top = False, weights= 'imagenet', input_shape=(224,224,3))
+
+        x = VGG16.output
+        x = Flatten()(x)
+        x = Dense(256,activation='relu')(x)
+        x = Dropout(0.1)(x)
+        out = Dense(7,activation='softmax')(x)
+        tf_model=Model(inputs=VGG16.input,outputs=out)
+
+        for layer in tf_model.layers[:20]:
+            layer.trainable=False
+
+        tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
+
+        model = tf_model
         model.load_weights(pesosmodelos[indexEpoch])
         indexEpoch = indexEpoch + 1
 
@@ -551,23 +566,29 @@ def montarMatriz():
         print("Initial loss: {:.2f}".format(loss1))
         print("Initial accuracy: {:.2f}".format(accuracy1))
 
-
     print(validacaoAccuracy)
 
     confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
 
-    # accuracy: (tp + tn) / (p + n)
-    accuracy = metrics.accuracy_score(predGlobal, y_val_stringGlobal)
-    print('Accuracy: %f' % accuracy)
-    # precision tp / (tp + fp)
-    precision = metrics.precision_score(predGlobal, y_val_stringGlobal, average='macro')
-    print('Precision: %f' % precision)
-    # recall: tp / (tp + fn)
-    recall = metrics.recall_score(predGlobal, y_val_stringGlobal, average='macro')
-    print('Recall: %f' % recall)
-    # f1: 2 tp / (2 tp + fp + fn)
-    f1 = metrics.f1_score(predGlobal, y_val_stringGlobal, average='macro')
-    print('F1 score: %f' % f1)
+    from sklearn.metrics import precision_recall_fscore_support as score
+    precision, recall, fscore, support = score(predGlobal, y_val_stringGlobal)
+    Style = ['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan']
+    objPerClass = {'Style': Style, 'Precision': precision, 'Recall': recall, 'Fscore': fscore, 'Support': support}
+    dataframePerClass = pd.DataFrame(data=objPerClass)
+    print(dataframePerClass)
+
+    # # accuracy: (tp + tn) / (p + n)
+    # accuracy = metrics.accuracy_score(predGlobal, y_val_stringGlobal)
+    # print('Accuracy: %f' % accuracy)
+    # # precision tp / (tp + fp)
+    # precision = metrics.precision_score(predGlobal, y_val_stringGlobal, average='macro')
+    # print('Precision: %f' % precision)
+    # # recall: tp / (tp + fn)
+    # recall = metrics.recall_score(predGlobal, y_val_stringGlobal, average='macro')
+    # print('Recall: %f' % recall)
+    # # f1: 2 tp / (2 tp + fp + fn)
+    # f1 = metrics.f1_score(predGlobal, y_val_stringGlobal, average='macro')
+    # print('F1 score: %f' % f1)
 
     import seaborn as sn
     import matplotlib.pyplot as plt
