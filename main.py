@@ -557,8 +557,6 @@ def montarMatriz():
         X_train, X_val = X[train_index], X[test_index]
         y_train, y_val = y[train_index], y[test_index]
 
-        # y_val_stringGlobal, predGlobal = montarConfusionMatrix10Folds(model, X_val, y_val)
-
         y_val_string, pred = montarConfusionMatrix10Folds(model, X_val, y_val)
 
         y_val_stringGlobal = pd.concat([y_val_stringGlobal, y_val_string])
@@ -581,6 +579,18 @@ def montarMatriz():
     objPerClass = {'Style': Style, 'Precision': precision, 'Recall': recall, 'Fscore': fscore, 'Support': support}
     dataframePerClass = pd.DataFrame(data=objPerClass)
     print(dataframePerClass)
+
+    accuracy = metrics.accuracy_score(predGlobal, y_val_stringGlobal)
+    print('Accuracy: %f' % accuracy)
+    # precision tp / (tp + fp)
+    precision = metrics.precision_score(predGlobal, y_val_stringGlobal, average='macro')
+    print('Precision: %f' % precision)
+    # recall: tp / (tp + fn)
+    recall = metrics.recall_score(predGlobal, y_val_stringGlobal, average='macro')
+    print('Recall: %f' % recall)
+    # f1: 2 tp / (2 tp + fp + fn)
+    f1 = metrics.f1_score(predGlobal, y_val_stringGlobal, average='macro')
+    print('F1 score: %f' % f1)
 
     df_cm = pd.DataFrame(confusion_matrix, index=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'] , columns=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
     sn.set(font_scale=1.4) # for label size
