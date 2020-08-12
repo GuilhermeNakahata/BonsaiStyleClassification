@@ -264,11 +264,11 @@ def PredizerImagem(model, X_val, y_val):
     pred = model.predict(X_val)
     pred = np.argmax(pred, axis=1)
     pred = pd.DataFrame(pred).replace(
-        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
+        {0: 'Formal_Upright', 1: 'Wind_Swept',2: 'Semi_Cascade', 3: 'Cascade', 4: 'Literati', 5: 'Informal_Upright', 6: 'Slanting'})
 
     y_val_string = np.argmax(y_val, axis=1)
     y_val_string = pd.DataFrame(y_val_string).replace(
-        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
+        {0: 'Formal_Upright', 1: 'Wind_Swept',2: 'Semi_Cascade', 3: 'Cascade', 4: 'Literati', 5: 'Informal_Upright', 6: 'Slanting'})
 
     confusion_matrix = metrics.confusion_matrix(y_true=y_val_string, y_pred=pred)
 
@@ -318,11 +318,11 @@ def montarConfusionMatrix10Folds(model, X_val, y_val):
     pred = model.predict(X_val)
     pred = np.argmax(pred, axis=1)
     pred = pd.DataFrame(pred).replace(
-        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
+        {0: 'Formal_Upright', 1: 'Wind_Swept',2: 'Semi_Cascade', 3: 'Cascade', 4: 'Literati', 5: 'Informal_Upright', 6: 'Slanting'})
 
     y_val_string = np.argmax(y_val, axis=1)
     y_val_string = pd.DataFrame(y_val_string).replace(
-        {0: 'chokkan', 1: 'fukunagashi',2: 'han_kengai', 3: 'kengai', 4: 'literatti', 5: 'moyogi', 6: 'shakan'})
+        {0: 'Formal_Upright', 1: 'Wind_Swept',2: 'Semi_Cascade', 3: 'Cascade', 4: 'Literati', 5: 'Informal_Upright', 6: 'Slanting'})
 
     return y_val_string, pred
 
@@ -572,10 +572,10 @@ def montarMatriz():
 
     print(validacaoAccuracy)
 
-    confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
+    confusion_matrix = metrics.confusion_matrix(y_true=predGlobal, y_pred=y_val_stringGlobal, labels=['Formal_Upright','Wind_Swept','Semi_Cascade','Cascade','Literati','Informal_Upright','Slanting'])
 
     precision, recall, fscore, support = score(predGlobal, y_val_stringGlobal)
-    Style = ['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan']
+    Style = ['Formal_Upright','Wind_Swept','Semi_Cascade','Cascade','Literati','Informal_Upright','Slanting']
     objPerClass = {'Style': Style, 'Precision': precision, 'Recall': recall, 'Fscore': fscore, 'Support': support}
     dataframePerClass = pd.DataFrame(data=objPerClass)
     print(dataframePerClass)
@@ -592,8 +592,8 @@ def montarMatriz():
     f1 = metrics.f1_score(predGlobal, y_val_stringGlobal, average='macro')
     print('F1 score: %f' % f1)
 
-    df_cm = pd.DataFrame(confusion_matrix, index=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'] , columns=['chokkan','fukunagashi','han_kengai','kengai','literatti','moyogi','shakan'])
-    sn.set(font_scale=1.4) # for label size
+    df_cm = pd.DataFrame(confusion_matrix, index=['Formal_Upright','Wind_Swept','Semi_Cascade','Cascade','Literati','Informal_Upright','Slanting'] , columns=['Formal_Upright','Wind_Swept','Semi_Cascade','Cascade','Literati','Informal_Upright','Slanting'])
+    sn.set(font_scale=1) # for label size
     sn.heatmap(df_cm/np.sum(df_cm), annot=True, annot_kws={"size": 12}, cmap='Greens') # font size
 
     plt.show()
