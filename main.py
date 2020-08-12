@@ -10,7 +10,6 @@ import cv2 as cv
 import os
 import glob
 import sklearn.metrics as metrics
-import seaborn as sn
 
 from sklearn.metrics import precision_recall_fscore_support as score
 from nets.nn import Sequential
@@ -536,21 +535,7 @@ def montarMatriz(titleMatrix):
         print("Carregando o peso: " + pesosmodelos[indexEpoch])
         print("Carregando o modelo: " + modelos[indexEpoch])
 
-        VGG16 = tf.keras.applications.VGG16(include_top = False, weights= 'imagenet', input_shape=(224,224,3))
-
-        x = VGG16.output
-        x = Flatten()(x)
-        x = Dense(256,activation='relu')(x)
-        x = Dropout(0.1)(x)
-        out = Dense(7,activation='softmax')(x)
-        tf_model=Model(inputs=VGG16.input,outputs=out)
-
-        for layer in tf_model.layers[:20]:
-            layer.trainable=False
-
-        tf_model.compile(optimizer = Nadam(0.0001) , loss = 'categorical_crossentropy', metrics=["accuracy"])
-
-        model = tf_model
+        model = keras.models.load_model(modelos[indexEpoch])
         model.load_weights(pesosmodelos[indexEpoch])
         indexEpoch = indexEpoch + 1
 
@@ -648,7 +633,7 @@ def plot_confusion_matrix(cm,
 #---------------------------
 
 # PlotarGraficoTodosKfolds()
-montarMatriz("VGG16")
+# montarMatriz("VGG16")
 
 # inceptionv3 = keras.models.load_model('GoogleNet10EpochsK-Folds1.tf')
 # print("Modelo carregado!")
