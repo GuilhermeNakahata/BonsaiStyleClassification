@@ -74,18 +74,6 @@ def evaluate_modelResNet(trainGenerator, valGenerator, indexEpochs):
     for layer in restnet.layers:
         layer.trainable = False
 
-
-    # model = Sequential()
-    # model.add(restnet)
-    # model.add(Dense(128, activation='relu' , input_dim=(224,244,3)))
-    # model.add(Dropout(0.4))
-    # # model.add(Dense(256, activation='relu'))
-    # # model.add(Dropout(0.3))
-    # model.add(Dense(6, activation='softmax'))
-    # model.compile(loss='categorical_crossentropy',
-    #               optimizer=optimizers.RMSprop(lr=2e-5),
-    #               metrics=['accuracy'])
-
     restnet.trainable = True
     set_trainable = False
     for layer in restnet.layers:
@@ -190,19 +178,18 @@ def evaluate_modelDenseNet(trainGenerator, valGenerator, indexEpochs):
     for layer in densenet.layers:
         layer.trainable = False
 
-    model = Sequential()
-    model.add(densenet)
-    model.add(layers.Flatten())
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dropout(0.1))
-    model.add(layers.Dense(7, activation='softmax'))
-    model.summary()
+    x = densenet.output
+    x = Flatten()(x)
+    x = Dense(256,activation='relu')(x)
+    x = Dropout(0.1)(x)
+    out = Dense(7,activation='softmax')(x)
+    tf_model=Model(inputs=densenet.input,outputs=out)
 
-    model.compile(optimizer= Nadam(0.0001),
+    tf_model.compile(optimizer= Nadam(0.0001),
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
-    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, model, indexEpochs)
+    model, val_acc, history = TreinarModelo(trainGenerator,valGenerator, tf_model, indexEpochs)
 
     return model, val_acc, history
 
