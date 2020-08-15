@@ -304,13 +304,56 @@ def VerificarPrecisao(model, X_val, y_val):
 # -------------------------------
 
 def ImprimirExemplos(label, arrayImages):
-    fig, ax = plt.subplots(3, 3)
+    fig, ax = plt.subplots(2, 4)
     fig.set_size_inches(10, 10)
-    for i in range(3):
-        for j in range(3):
-            r = random.randint(0, len(label))
+    index = 0
+    for i in range(2):
+        for j in range(4):
+            labelTxt = "Error"
+
+            if(index == 0):
+                r = random.randint(0, 100)
+            elif(index == 1):
+                r = random.randint(100, 200)
+            elif(index == 2):
+                r = random.randint(200, 300)
+            elif(index == 3):
+                r = random.randint(300, 400)
+            elif(index == 4):
+                r = random.randint(400, 500)
+            elif(index == 5):
+                r = random.randint(500, 600)
+            elif(index == 6):
+                r = random.randint(600, 700)
+
+            index = index + 1
+
             ax[i, j].imshow(arrayImages[r][:, :, ::-1])
-            ax[i, j].set_title('Style: ' + label[r])
+            comparasion = label[r] == np.array([1,0,0,0,0,0,0,])
+            if(comparasion.all()):
+                labelTxt = "Formal_Upright"
+            comparasion = label[r] == np.array([0,1,0,0,0,0,0,])
+            if(comparasion.all()):
+                labelTxt = "Wind_Swept"
+            comparasion = label[r] == np.array([0,0,1,0,0,0,0,])
+            if(comparasion.all()):
+                labelTxt = "Semi_Cascade"
+            comparasion = label[r] == np.array([0,0,0,1,0,0,0,])
+            if(comparasion.all()):
+                labelTxt = "Cascade"
+            comparasion = label[r] == np.array([0,0,0,0,1,0,0,])
+            if(comparasion.all()):
+                labelTxt = "Literati"
+            comparasion = label[r] == np.array([0,0,0,0,0,1,0,])
+            if(comparasion.all()):
+                labelTxt = "Informal_Upright"
+            comparasion = label[r] == np.array([0,0,0,0,0,0,1,])
+            if(comparasion.all()):
+                labelTxt = "Slating"
+
+
+
+            ax[i, j].set_title('Style: ' + labelTxt)
 
     plt.tight_layout()
     plt.show()
