@@ -4,7 +4,7 @@
   <img alt="Repository size" src="https://img.shields.io/github/repo-size/GuilhermeNakahata/CNN-TransferLearning">
 	
   <a href="https://github.com/GuilhermeNakahata/CNN-TransferLearning/commits/master">
-    <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/GuilhermeNakahata/CNN-TransferLearning>
+    <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/GuilhermeNakahata/CNN-TransferLearning">
   </a>
     
    <img alt="License" src="https://img.shields.io/badge/license-MIT-brightgreen">
