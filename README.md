@@ -2,6 +2,10 @@
   <img alt="GitHub language count" src="https://img.shields.io/github/languages/count/GuilhermeNakahata/CNN-TransferLearning?color=%2304D361">
 
   <img alt="Repository size" src="https://img.shields.io/github/repo-size/GuilhermeNakahata/CNN-TransferLearning">
+	
+  <a href="https://github.com/GuilhermeNakahata/CNN-TransferLearning/commits/master">
+    <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/GuilhermeNakahata/JCNN-TransferLearning>
+  </a>
     
    <img alt="License" src="https://img.shields.io/badge/license-MIT-brightgreen">
 	
