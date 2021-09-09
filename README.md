@@ -1,5 +1,3 @@
-# CNN-TransferLearning
-
 <p align="center">
   <img alt="GitHub language count" src="https://img.shields.io/github/languages/count/GuilhermeNakahata/CNN-TransferLearning?color=%2304D361">
 
@@ -28,7 +26,7 @@
 
 ## License 📝
 
-This project is under the [MIT] license (./LICENSE).
+This project is under the [MIT](./LICENSE) license.
 	
 ---
 	
