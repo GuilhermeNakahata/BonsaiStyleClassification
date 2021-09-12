@@ -16,10 +16,6 @@
 
 - [Dataset and more informations][dataset]
 
----
-
-
-
 [dataset]: https://sites.google.com/view/bonsaistyleclassification
 
 ---
